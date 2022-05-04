@@ -1,0 +1,98 @@
+﻿@model Es.Riam.Gnoss.Web.MVC.Models.MessageModel
+@if (Model != null)
+{   
+    <div class="resource @(!Model.Readed?"nuevoMensaje":"")">
+        <div class="box description">
+            <div class="group title">
+                <h4>
+                    <a title="@Html.Raw(Model.Subject)" href="@Model.Url">@Html.Raw(Model.Subject)</a>
+                </h4>
+                <p class="resourceType mensaje">
+                    <span>tipo de documento</span>
+                    <a href="@Model.Url">Mesnsaje</a>
+                </p>
+                <input type="checkbox" id="chk_@Model.Key" class="ListaMensajesCheckBox" />
+            </div>
+            <div class="group content">
+                <div class="descripcionResumida">
+                    <p style="display: block;">
+                        @Html.Raw(Model.Body)
+                    </p>
+                </div>
+            </div>
+            
+           
+            <div class="group utils-2">
+                @if(Model.Sender != null)
+                {
+                    <div class="mensajeUsuariosDe etiquetas">
+                        <p>
+                            De:
+                        </p>
+
+                        @{
+                            string nombreRemitente = Html.ObtenerNombrePerfil(Model.Sender);
+                            string urlRemitente = Html.ObtenerUrlPerfil(Model.Sender);
+                        }
+                        <ul class="compact">
+                            <li><a title="@nombreRemitente" href="@urlRemitente">@Html.AcortarTexto(nombreRemitente, 15)</a></li>
+                        </ul>
+                        <ul class="nocompact">
+                            <li><a  title="@nombreRemitente" href="@urlRemitente">@nombreRemitente</a></li>
+                        </ul>
+                    </div>
+                }
+                
+                @if (Model.Receivers.Count > 0)
+                {
+                    <div class="mensajeUsuariosPara etiquetas nocompact">
+                        <p>
+                            Para:
+                        </p>
+
+@*                        <ul class="compact">
+                            <li><a title="@nombreReceptor" href="@urlReceptor">@Html.AcortarTexto(nombreReceptor , 15)</a></li>
+                        </ul>*@
+                        <ul class="nocompact">
+                            @foreach(ProfileModel destinatario in Model.Receivers)
+                            {
+                                string nombreDestinatario = Html.ObtenerNombrePerfil(destinatario);
+                                string urlDestinatario = Html.ObtenerUrlPerfil(destinatario);
+                                <li><a title="@nombreDestinatario" href="@urlDestinatario">@nombreDestinatario</a></li>
+                            }
+                        </ul>
+                    </div>
+                }
+                <div class="mensajeFecha">
+                    <p>
+                        @{  
+    string fecha = Model.ShippingDate.ToString("dd.MM.yy") + " " + Html.GetText("BANDEJAENTRADA", "ENVIADOALAS") + Model.ShippingDate.ToString("HH:mm");
+                        }
+                        @fecha
+                    </p>
+                </div>
+            </div>
+            <div class="group acciones">
+                <p>
+                    Acciones:
+                </p>
+                <ul>
+                    @if(Model.Received)
+                    {
+                        <li><a class="inlineActionResource" href="@Model.Url.Replace("?mensaje", "?responder&mensaje")">@Html.GetText("CORREO", "RESPONDERMENSAJESINTEXTOMENSAJE")</a></li>
+                        <li><a class="inlineActionResource" href="@Model.Url.Replace("?mensaje", "?responderATodos&mensaje")">@Html.GetText("CORREO", "REENVIARMENSAJEATODOS")</a></li>
+                    }
+                    <li><a class="inlineActionResource" href="@Model.Url.Replace("?mensaje", "?reenviar&mensaje")">@Html.GetText("CORREO", "REENVIARMENSAJESINTEXTOMENSAJE")</a></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+}
+
+
+
+
+
+
+
+

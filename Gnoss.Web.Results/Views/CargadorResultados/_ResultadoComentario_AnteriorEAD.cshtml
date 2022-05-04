@@ -1,0 +1,43 @@
+﻿@model CommentSearchModel
+@if (Model != null)
+{   
+    <div class="resource comment" id="comment_@Model.Key">
+        <div class="box description">
+            <div class="group title">
+                <h4>
+                    <a href="@Model.ResourceUrl">@Model.ResourceTitle</a>
+                </h4>
+                <p class="resourceType digital">
+                    <span>tipo de documento</span> <a href="@Model.ResourceUrl">Archivo digital</a>
+                </p>
+            </div>
+            <div class="group content">
+                <div class="descripcionResumida">
+                    @Html.Raw(Model.Description)
+                </div>
+            </div>
+            <div class="group utils-2">
+                <p>
+                    De: <a href="@Html.ObtenerUrlPerfil(Model.Publisher)">@Html.ObtenerNombrePerfil(Model.Publisher)</a>
+                </p>
+                <p class="fechaLive">@Model.DateComment.ToString("yyyy/MM/dd HH:mm")</p>
+            </div>
+            @if(!Model.Readed)
+            {
+            <div class="group acciones">
+                <ul>
+                    <li><a onclick="MarcarComentarioLeidoPorID('@Model.Key')" >@Html.GetText("COMENTARIOS", "MARCARLEIDO") </a></li>
+                </ul>
+            </div>
+            }
+        </div>
+    </div>
+}
+
+
+
+
+
+
+
+

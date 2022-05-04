@@ -1,0 +1,70 @@
+﻿@model MessageModel
+
+
+@*Descripción
+-----------------------------------------------
+Vista que muestra cada mensaje dentro de un contexto. 
+En concreto, son mensajes relacionados que son mostrados en la propia vista del mensaje individual como "Mensajes relacionados".
+
+Variables
+----------------------------------------------
+*@
+@{ 
+// Nombre y URL del remitente del mensaje
+string nombreRemitente = "";
+string urlRemitente = "";
+// Fecha de recepción del mensaje
+string fecha = "";
+}
+
+@*
+
+--------------------  Vista de cada mensaje resultado (mostrado en contexto mensajes relacionados) --------------------*@
+
+@if (Model != null)
+{   
+
+    @* Obtener info del remitente del mensaje (si lo hay) *@
+    if(Model.Sender != null) {
+        nombreRemitente = Html.ObtenerNombrePerfil(Model.Sender);
+        urlRemitente = Html.ObtenerUrlPerfil(Model.Sender);
+    }
+
+    @* Obtener fecha recepción del mensaje *@
+    fecha = Model.ShippingDate.ToString("dd/MM/yy") + " " + Html.GetText("BANDEJAENTRADA", "ENVIADOALAS") + Model.ShippingDate.ToString("HH:mm");
+
+    @* Contenedor de cada mensaje que se mostrará en la sección contextos (Mensajes relacionados) *@     
+    <article class="resource resource-grupo no-leido @(!Model.Readed?"no-leido":"")">
+        @* Contenedor del mensaje *@
+        <div class="wrap">
+            @* Título del mensaje relacionado *@
+            <h3 class="title @(!Model.Readed?"icono-mail":"icono-mail-leido") con-icono-before">
+                <a title="@Model.Subject" href="@Model.Url">@Model.Subject</a>
+            </h3>
+            @if (Model.Sender != null)
+            {
+                @* Remitente del mensaje *@
+                <p class="autor">
+                    @Html.AcortarTexto(nombreRemitente, 20)
+                </p>
+                
+            }
+            @* Fecha de recepción/envío del mensaje *@
+            <p class="fecha" id="@Model.Key">@fecha</p>
+        </div>
+    </article>
+}
+
+<script lang="javascript" type="text/javascript">
+    $(document).ready(function () {
+        let fechamoment = "@Model.ShippingDate.ToString("yyyy-MM-dd")" + "T" + "@Model.ShippingDate.ToString("HH:mm:ss")" + "Z";
+        var fechaServer = moment(fechamoment);
+        var fechaMsj = fechaServer.tz(Intl.DateTimeFormat().resolvedOptions().timeZone).format('DD/MM/YY[ a las ]HH:mm');
+        $("#@Model.Key").text(fechaMsj);
+    });
+</script>
+
+
+
+
+

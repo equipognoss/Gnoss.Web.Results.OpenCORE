@@ -1,0 +1,25 @@
+﻿@model Es.Riam.Gnoss.Web.MVC.Models.GroupCardModel
+@if (Model != null)
+{   
+    <div style="height: auto;" class="resource">
+        <div class="box description">
+            <div class="group title">
+                <h2><a href="@Model.UrlGroup">@Model.Name</a></h2>
+                <p class="resourceType  conImagenPerfil">
+                    <a href="@Model.UrlGroup">
+                        <img src="@ViewBag.BaseURLStatic/img/iconos/grupos/grupo.gif" alt="@Model.Name" />
+                    </a>
+                </p>
+            </div>
+        </div>
+        <div class="group acciones"></div>
+    </div>
+}
+
+
+
+
+
+
+
+

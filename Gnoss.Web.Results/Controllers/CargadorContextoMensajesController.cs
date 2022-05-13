@@ -81,7 +81,7 @@ namespace ServicioCargaResultados
             mEntityContextBASE = entityContextBASE;
             mViewEngine = viewEngine;
             mServicesUtilVirtuosoAndReplication = servicesUtilVirtuosoAndReplication;
-            mCargadorResultadosModel = new CargadorResultadosModel(entityContext, loggingService, redisCacheWrapper, configService, virtuosoAD);
+            mCargadorResultadosModel = new CargadorResultadosModel(entityContext, loggingService, redisCacheWrapper, configService, virtuosoAD, mServicesUtilVirtuosoAndReplication);
         }
 
         #endregion
@@ -358,7 +358,7 @@ namespace ServicioCargaResultados
 
             if (mCargadorResultadosModel.ListaIdsResultado == null)
             {
-                mCargadorResultadosModel.ListaIdsResultado = new CargadorResultadosModel(mEntityContext, mLoggingService, mRedisCacheWrapper, mConfigService, mVirtuosoAD).ObtenerListaID(facetadoDS, "MensajesRelacionados", "Mensaje");
+                mCargadorResultadosModel.ListaIdsResultado = new CargadorResultadosModel(mEntityContext, mLoggingService, mRedisCacheWrapper, mConfigService, mVirtuosoAD, mServicesUtilVirtuosoAndReplication).ObtenerListaID(facetadoDS, "MensajesRelacionados", "Mensaje");
             }
 
             #region Cargamos los resultados

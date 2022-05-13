@@ -49,7 +49,9 @@ using System.Collections.Generic;
 using System.Data;
 using System.Globalization;
 using System.IO;
+using System.IO.Compression;
 using System.Linq;
+using System.Runtime.Serialization.Formatters.Binary;
 using System.Text;
 using System.Threading;
 
@@ -161,7 +163,7 @@ namespace ServicioCargaResultados
             mEnv = env;
             mServicesUtilVirtuosoAndReplication = servicesUtilVirtuosoAndReplication;
             mControladorBase = new ControladorBase(loggingService, configService, entityContext, redisCacheWrapper, gnossCache, virtuosoAD, httpContextAccessor, servicesUtilVirtuosoAndReplication);
-            mCargadorResultadosModel = new CargadorResultadosModel(entityContext, loggingService, redisCacheWrapper, configService, virtuosoAD);
+            mCargadorResultadosModel = new CargadorResultadosModel(entityContext, loggingService, redisCacheWrapper, configService, virtuosoAD, mServicesUtilVirtuosoAndReplication);
         }
 
         #endregion
@@ -175,6 +177,7 @@ namespace ServicioCargaResultados
             //MyVirtualPathProvider.listaRutasVirtuales.Clear();
             return Content("OK");
         }
+
         [NonAction]
         private ActionResult CargarResultadosMapa(Guid pProyectoID, string parametros)
         {
@@ -208,21 +211,27 @@ namespace ServicioCargaResultados
                         if (!documentoIDMapa.Equals(Guid.Empty) && fila["s"].ToString().ToLower().Contains(documentoIDMapa.ToString().ToLower()))
                         {
                             documentoIDMapa = Guid.Empty;
-                            sb.Append($"{fila["s"]},documentoid,{fila["lat"].ToString().Replace(',', '.')},{fila["long"].ToString().Replace(',', '.')}|||");
+                            sb.Append($"{fila["s"]},documentoid,{fila["lat"].ToString().Replace(',', '.')},{fila["long"].ToString().Replace(',', '.')}");
                         }
                         else
                         {
-                            sb.Append($"{fila["s"]},{fila["rdftype"]},{fila["lat"].ToString().Replace(',', '.')},{fila["long"].ToString().Replace(',', '.')}|||");
+                            sb.Append($"{fila["s"]},{fila["rdftype"]},{fila["lat"].ToString().Replace(',', '.')},{fila["long"].ToString().Replace(',', '.')}");
                         }
                     }
 
-                    if (fila.ItemArray.Length > 4 && !string.IsNullOrEmpty(fila["ruta"].ToString()))
+                    if (fila.ItemArray.Length > 5 && mCargadorResultadosModel.FacetadoDS.Tables["RecursosBusqueda"].Columns.Contains("ruta") && string.IsNullOrEmpty(fila["ruta"].ToString()))
                     {
-                        if (fila.ItemArray.Length > 5)
+                        sb.Append($"Polyline,{fila["s"]},{fila["rdftype"]},geo:coordinates,{fila["ruta"].ToString().Replace(',', ';').Replace("{geo:coordinates:", "{\"geo:coordinates\":")},{fila["color"]}");
+                    }
+
+                    if (fila.ItemArray.Length > 4 && mCargadorResultadosModel.FacetadoDS.Tables["RecursosBusqueda"].Columns.Contains("prop0"))
+                    {
+                        for (int i = 0; i < fila.ItemArray.Length - 4; i++)
                         {
-                            sb.Append($"Polyline,{fila["s"]},{fila["rdftype"]},geo:coordinates,{fila["ruta"].ToString().Replace(',', ';').Replace("{geo:coordinates:", "{\"geo:coordinates\":")},{fila["color"]}|||");
+                            sb.Append($",{fila[$"prop{i}"].ToString().Replace(",", "#COMA#")}");
                         }
                     }
+                    sb.Append("|||");
                 }
 
                 if (!documentoIDMapa.Equals(Guid.Empty))
@@ -250,8 +259,8 @@ namespace ServicioCargaResultados
 
                         if (facetadoDS.Tables["SelectPropEnt"] != null)
                         {
-                            DataRow[] rowLatitud = facetadoDS.Tables["SelectPropEnt"].Select("p='" + latitud + "'");
-                            DataRow[] rowLongitud = facetadoDS.Tables["SelectPropEnt"].Select("p='" + longitud + "'");
+                            DataRow[] rowLatitud = facetadoDS.Tables["SelectPropEnt"].Select($"p='{latitud}'");
+                            DataRow[] rowLongitud = facetadoDS.Tables["SelectPropEnt"].Select($"p='{longitud}'");
 
                             if (rowLatitud.Length == 1 && rowLongitud.Length == 1)
                             {
@@ -265,12 +274,13 @@ namespace ServicioCargaResultados
 
             return Content(System.Text.Json.JsonSerializer.Serialize(sb.ToString()));
         }
+
         [NonAction]
         private ActionResult CargarResultadosChart()
         {
             string resultado = ObtenerTextoNumResultados() + "|||";
             int numCol = mCargadorResultadosModel.FacetadoDS.Tables["RecursosBusqueda"].Columns.Count;
-            bool mapearTypeSubType = (mCargadorResultadosModel.SelectFiltroChart.Value.Contains("rdf:type") || mCargadorResultadosModel.SelectFiltroChart.Value.Contains("gnoss:type"));
+            bool mapearTypeSubType = mCargadorResultadosModel.SelectFiltroChart.Value.Contains("rdf:type") || mCargadorResultadosModel.SelectFiltroChart.Value.Contains("gnoss:type");
 
             foreach (DataRow fila in mCargadorResultadosModel.FacetadoDS.Tables["RecursosBusqueda"].Rows)
             {
@@ -293,7 +303,7 @@ namespace ServicioCargaResultados
         }
         [HttpGet, HttpPost]
         [Route("CargarResultados")]
-        public ActionResult CargarResultados([FromForm]string pProyectoID, [FromForm] string pIdentidadID, [FromForm] bool pEsUsuarioInvitado, [FromForm] string pUrlPaginaBusqueda, [FromForm] bool pUsarMasterParaLectura, [FromForm] bool pAdministradorVeTodasPersonas, [FromForm] short pTipoBusqueda, [FromForm] string pGrafo, [FromForm] string pParametros_adiccionales, [FromForm] string pParametros, [FromForm] bool pPrimeraCarga, [FromForm] string pLanguageCode, [FromForm] int pNumeroParteResultados, [FromForm] string pFiltroContexto, [FromForm] bool? pJson, [FromForm] string tokenAfinidad)
+        public ActionResult CargarResultados([FromForm] string pProyectoID, [FromForm] string pIdentidadID, [FromForm] bool pEsUsuarioInvitado, [FromForm] string pUrlPaginaBusqueda, [FromForm] bool pUsarMasterParaLectura, [FromForm] bool pAdministradorVeTodasPersonas, [FromForm] short pTipoBusqueda, [FromForm] string pGrafo, [FromForm] string pParametros_adiccionales, [FromForm] string pParametros, [FromForm] bool pPrimeraCarga, [FromForm] string pLanguageCode, [FromForm] int pNumeroParteResultados, [FromForm] string pFiltroContexto, [FromForm] bool? pJson, [FromForm] string tokenAfinidad)
         {
             try
             {
@@ -912,7 +922,23 @@ namespace ServicioCargaResultados
                                     PreserveReferencesHandling = PreserveReferencesHandling.Objects,
                                     TypeNameHandling = TypeNameHandling.All
                                 };
-                                string respuesta = JsonConvert.SerializeObject(resultadoModel, jsonSerializerSettings);
+                                string respuesta = string.Empty;
+
+                                using (MemoryStream input = new MemoryStream())
+                                {
+                                    BinaryFormatter bformatter = new BinaryFormatter();
+                                    bformatter.Serialize(input, resultadoModel);
+                                    input.Seek(0, SeekOrigin.Begin);
+
+                                    using (MemoryStream output = new MemoryStream())
+                                    using (DeflateStream deflateStream = new DeflateStream(output, CompressionMode.Compress))
+                                    {
+                                        input.CopyTo(deflateStream);
+                                        deflateStream.Close();
+
+                                        respuesta = Convert.ToBase64String(output.ToArray());
+                                    }
+                                }
                                 if (Request.Headers["User-Agent"].Contains("GnossInternalRequest"))
                                 {
                                     respuesta = SerializeViewData(respuesta);
@@ -1052,7 +1078,8 @@ namespace ServicioCargaResultados
                 TypeNameHandling = TypeNameHandling.All,
                 TypeNameAssemblyFormat = System.Runtime.Serialization.Formatters.FormatterAssemblyStyle.Full
             };
-            string jsonViewData = JsonConvert.SerializeObject(ViewData, jsonSerializerSettingsVB);
+            Dictionary<string, object> dic = ViewData.Where(k => !k.Key.Equals("LoggingService")).ToDictionary(k => k.Key, v => v.Value);
+            string jsonViewData = JsonConvert.SerializeObject(dic, jsonSerializerSettingsVB);
 
             return json + "{ComienzoJsonViewData}" + jsonViewData;
         }

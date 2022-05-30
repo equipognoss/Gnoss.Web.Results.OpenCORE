@@ -8,10 +8,10 @@ Configuración estandar de esta aplicación en el archivo docker-compose.yml:
 
 ```yml
 results:
-    image: results
+    image: docker.gnoss.com/results
     env_file: .env
     ports:
-     - ${puerto_resultados}:80
+     - ${puerto_results}:80
     environment:
      virtuosoConnectionString: ${virtuosoConnectionString}
      acid: ${acid}

@@ -68,7 +68,8 @@ namespace ServicioCargaResultados
 
         #region Constructor
 
-        public CargadorContextoMensajesController(EntityContext entityContext, LoggingService loggingService, RedisCacheWrapper redisCacheWrapper, ConfigService configService, VirtuosoAD virtuosoAD, GnossCache gnossCache, UtilServicios utilServicios, IHttpContextAccessor httpContextAccessor, EntityContextBASE entityContextBASE, ICompositeViewEngine viewEngine, IServicesUtilVirtuosoAndReplication servicesUtilVirtuosoAndReplication)
+        public CargadorContextoMensajesController(EntityContext entityContext, LoggingService loggingService, RedisCacheWrapper redisCacheWrapper, ConfigService configService, VirtuosoAD virtuosoAD, GnossCache gnossCache, UtilServicios utilServicios, IHttpContextAccessor httpContextAccessor, EntityContextBASE entityContextBASE, ICompositeViewEngine viewEngine, IServicesUtilVirtuosoAndReplication servicesUtilVirtuosoAndReplication):
+            base(loggingService,configService, entityContext, redisCacheWrapper, gnossCache, virtuosoAD, httpContextAccessor, servicesUtilVirtuosoAndReplication)
         {
             mEntityContext = entityContext;
             mLoggingService = loggingService;

@@ -147,6 +147,7 @@ namespace ServicioCargaResultados
         #region Constructor
 
         public CargadorResultadosController(EntityContext entityContext, LoggingService loggingService, RedisCacheWrapper redisCacheWrapper, ConfigService configService, VirtuosoAD virtuosoAD, GnossCache gnossCache, UtilServicios utilServicios, IHttpContextAccessor httpContextAccessor, EntityContextBASE entityContextBASE, ICompositeViewEngine viewEngine, UtilServicioResultados utilServicioResultados, UtilServiciosFacetas utilServiciosFacetas, IHostingEnvironment env, IServicesUtilVirtuosoAndReplication servicesUtilVirtuosoAndReplication)
+            : base(loggingService, configService, entityContext, redisCacheWrapper, gnossCache, virtuosoAD, httpContextAccessor, servicesUtilVirtuosoAndReplication)
         {
             mEntityContext = entityContext;
             mLoggingService = loggingService;
@@ -922,25 +923,25 @@ namespace ServicioCargaResultados
                                     PreserveReferencesHandling = PreserveReferencesHandling.Objects,
                                     TypeNameHandling = TypeNameHandling.All
                                 };
-                                string respuesta = string.Empty;
+                                string respuesta = JsonConvert.SerializeObject(resultadoModel, jsonSerializerSettings);
 
-                                using (MemoryStream input = new MemoryStream())
-                                {
-                                    BinaryFormatter bformatter = new BinaryFormatter();
-                                    bformatter.Serialize(input, resultadoModel);
-                                    input.Seek(0, SeekOrigin.Begin);
-
-                                    using (MemoryStream output = new MemoryStream())
-                                    using (DeflateStream deflateStream = new DeflateStream(output, CompressionMode.Compress))
-                                    {
-                                        input.CopyTo(deflateStream);
-                                        deflateStream.Close();
-
-                                        respuesta = Convert.ToBase64String(output.ToArray());
-                                    }
-                                }
                                 if (Request.Headers["User-Agent"].Contains("GnossInternalRequest"))
                                 {
+                                    using (MemoryStream input = new MemoryStream())
+                                    {
+                                        BinaryFormatter bformatter = new BinaryFormatter();
+                                        bformatter.Serialize(input, resultadoModel);
+                                        input.Seek(0, SeekOrigin.Begin);
+
+                                        using (MemoryStream output = new MemoryStream())
+                                        using (DeflateStream deflateStream = new DeflateStream(output, CompressionMode.Compress))
+                                        {
+                                            input.CopyTo(deflateStream);
+                                            deflateStream.Close();
+
+                                            respuesta = Convert.ToBase64String(output.ToArray());
+                                        }
+                                    }
                                     respuesta = SerializeViewData(respuesta);
                                 }
                                 return Content(respuesta);

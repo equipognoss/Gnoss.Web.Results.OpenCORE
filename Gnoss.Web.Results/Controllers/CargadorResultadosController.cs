@@ -54,6 +54,8 @@ using System.Linq;
 using System.Runtime.Serialization.Formatters.Binary;
 using System.Text;
 using System.Threading;
+using System.Threading.Tasks;
+using System.Web;
 
 namespace ServicioCargaResultados
 {
@@ -949,17 +951,27 @@ namespace ServicioCargaResultados
                             else
                             {
                                 //return View("CargarResultados");
-
                                 string resultado = "";
                                 using (StringWriter sw = new StringWriter())
                                 {
-                                    ViewEngineResult viewResult = mViewEngine.FindView(ControllerContext, ObtenerNombreVista("CargarResultados"), false);
+                                    try
+                                    {
+                                        ViewEngineResult viewResult = mViewEngine.FindView(ControllerContext, ObtenerNombreVista("CargarResultados"), false);
 
-                                    if (viewResult.View == null) throw new Exception("View not found: CargarResultados");
-                                    ViewContext viewContext = new ViewContext(ControllerContext, viewResult.View, ViewData, TempData, sw, new HtmlHelperOptions());
-                                    viewResult.View.RenderAsync(viewContext);
-
-                                    resultado = sw.GetStringBuilder().ToString();
+                                        if (viewResult.View == null) throw new Exception("View not found: CargarResultados");
+                                        ViewContext viewContext = new ViewContext(ControllerContext, viewResult.View, ViewData, TempData, sw, new HtmlHelperOptions());
+                                        Task renderTask = viewResult.View.RenderAsync(viewContext);
+                                        renderTask.Wait();
+                                        if (renderTask.Exception != null)
+                                        {
+                                            mLoggingService.GuardarLogError(renderTask.Exception);
+                                        }
+                                        resultado = sw.GetStringBuilder().ToString();
+                                    }
+                                    catch (Exception ex)
+                                    {
+                                        mLoggingService.GuardarLogError(ex);
+                                    }
                                 }
 
                                 KeyValuePair<int, string> resultadoPeticion = new KeyValuePair<int, string>(resultadoModel.NumeroResultadosTotal, resultado);
@@ -973,13 +985,24 @@ namespace ServicioCargaResultados
                             string resultado = "";
                             using (StringWriter sw = new StringWriter())
                             {
-                                ViewEngineResult viewResult = mViewEngine.FindView(ControllerContext, ObtenerNombreVista("CargarResultados"), false);
+                                try
+                                {
+                                    ViewEngineResult viewResult = mViewEngine.FindView(ControllerContext, ObtenerNombreVista("CargarResultados"), false);
+                                    if (viewResult.View == null) throw new Exception("View not found: CargarResultados");
+                                    ViewContext viewContext = new ViewContext(ControllerContext, viewResult.View, ViewData, TempData, sw, new HtmlHelperOptions());
+                                    Task renderTask = viewResult.View.RenderAsync(viewContext);
+                                    renderTask.Wait();
+                                    if (renderTask.Exception != null)
+                                    {
+                                        mLoggingService.GuardarLogError(renderTask.Exception);
+                                    }
 
-                                if (viewResult.View == null) throw new Exception("View not found: CargarResultados");
-                                ViewContext viewContext = new ViewContext(ControllerContext, viewResult.View, ViewData, TempData, sw, new HtmlHelperOptions());
-                                viewResult.View.RenderAsync(viewContext);
-
-                                resultado = sw.GetStringBuilder().ToString();
+                                    resultado = sw.GetStringBuilder().ToString();
+                                }
+                                catch (Exception ex)
+                                {
+                                    mLoggingService.GuardarLogError(ex);
+                                }
                             }
 
                             //Devuelvo la respuesta en el response de la petición

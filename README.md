@@ -2,6 +2,8 @@
 
 # Gnoss.Web.Results.OpenCORE
 
+![](https://github.com/equipognoss/Gnoss.Web.Results.OpenCORE/workflows/BuildWeb/badge.svg)
+
 Aplicación Web que se encarga de mostrar los resultados en una página de búsqueda. Los resultados pueden ser recursos, instancias de objetos de conocimiento, personas, grupos, etc. 
 
 Configuración estandar de esta aplicación en el archivo docker-compose.yml: 

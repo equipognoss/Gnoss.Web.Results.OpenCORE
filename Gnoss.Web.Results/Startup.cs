@@ -230,6 +230,11 @@ namespace Gnoss.Web.Results
             });
         }
 
+        private bool ComprobarDominioEnBD(string dominio)
+        {
+            return true;
+        }
+
         /// <summary>
         /// Establece el dominio de la cache.
         /// </summary>

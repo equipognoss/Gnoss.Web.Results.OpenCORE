@@ -56,8 +56,10 @@ namespace Gnoss.Web.Results
                 options.AddPolicy(name: "_myAllowSpecificOrigins",
                                   builder =>
                                   {
-                                      builder.AllowAnyOrigin();
+                                      builder.SetIsOriginAllowed(ComprobarDominioEnBD);
+                                      builder.AllowAnyHeader();
                                       builder.AllowAnyMethod();
+                                      builder.AllowCredentials();
                                   });
             });
             services.AddControllers();
@@ -176,16 +178,6 @@ namespace Gnoss.Web.Results
             var entity = sp.GetService<EntityContext>();
             LoggingService.RUTA_DIRECTORIO_ERROR = Path.Combine(mEnvironment.ContentRootPath, "logs");
 
-            //TODO Javier 
-            /*
-            BaseAD.LeerConfiguracionConexion(mGestorParametrosAPlicacion.ListaConfiguracionBBDD.Where(conf=>conf.TipoConexion.Equals((short)TipoConexion.SQLServer)).ToList());
-
-            BaseCL.LeerConfiguracionCache(mGestorParametrosAPlicacion.ListaConfiguracionBBDD.Where(conf => conf.TipoConexion.Equals((short)TipoConexion.Redis)).ToList());
-
-            BaseAD.LeerConfiguracionConexion(mGestorParametrosAPlicacion.ListaConfiguracionBBDD.Where(conf => conf.TipoConexion.Equals((short)TipoConexion.Virtuoso)).ToList());
-
-            BaseAD.LeerConfiguracionConexion(mGestorParametrosAPlicacion.ListaConfiguracionBBDD.Where(conf => conf.TipoConexion.Equals((short)TipoConexion.Virtuoso_HA_PROXY)).ToList());
-            */
             BaseCL.UsarCacheLocal = UsoCacheLocal.Siempre;
 
             string rutaVersionCacheLocal = $"{AppDomain.CurrentDomain.SetupInformation.ApplicationBase}/config/versionCacheLocal/";
@@ -202,15 +194,6 @@ namespace Gnoss.Web.Results
 
             ConfigurarApplicationInsights(configService);
 
-            //Quitamos los motores de vistas y añadimos nuestro motor Razor personalizado
-            //TODO mirar
-            //ViewEngines.Engines.Clear();
-            //ViewEngines.Engines.Add(new CustomRazorViewEngine());
-
-            //Quitamos los modos de presentacion y dejamos solamente el de por defecto
-            //TODO mirar
-            //DisplayModeProvider.Instance.Modes.Clear();
-            //DisplayModeProvider.Instance.Modes.Add(new DefaultDisplayMode());
             services.AddSwaggerGen(c =>
             {
                 c.SwaggerDoc("v1", new OpenApiInfo { Title = "Gnoss.Web.Results", Version = "v1" });

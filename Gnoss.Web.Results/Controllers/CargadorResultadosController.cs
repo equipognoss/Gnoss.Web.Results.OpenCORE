@@ -1512,7 +1512,7 @@ namespace ServicioCargaResultados
         }
         [HttpGet, HttpPost]
         [Route("CargarResultadosGadgetSPARQL")]
-        public ActionResult CargarResultadosGadgetSPARQL(string pSPARQL, Guid pProyectoID, int pNumItemsPag, int pNumPag, string pLanguageCode, bool pObtenerDatosExtraRecursos = true, bool pObtenerIdentidades = true, bool pObtenerDatosExtraIdentidades = false)
+        public ActionResult CargarResultadosGadgetSPARQL([FromForm] string pSPARQL, [FromForm] Guid pProyectoID, [FromForm] int pNumItemsPag, [FromForm] int pNumPag, [FromForm] string pLanguageCode, [FromForm] bool pObtenerDatosExtraRecursos = true, [FromForm] bool pObtenerIdentidades = true, [FromForm] bool pObtenerDatosExtraIdentidades = false)
         {
             try
             {
@@ -1628,7 +1628,13 @@ namespace ServicioCargaResultados
 
                 CargarPersonalizacion(mCargadorResultadosModel.Proyecto.Clave, controladorMVC);
 
-                string respuesta = System.Text.Json.JsonSerializer.Serialize(resultadoModel);
+                JsonSerializerSettings jsonSerializerSettings = new JsonSerializerSettings
+                {
+                    TypeNameHandling = TypeNameHandling.Auto,
+                    NullValueHandling = NullValueHandling.Ignore,
+                    Formatting = Formatting.Indented
+                };
+                string respuesta = JsonConvert.SerializeObject(resultadoModel, jsonSerializerSettings);
                 return Content(respuesta);
 
             }

@@ -1,0 +1,189 @@
+﻿@model ProfileModel
+
+@*
+Descripción
+-----------------------------------------------
+Vista que se utiliza para mostrar los resultados de tipo "Perfil". 
+Estos perfiles serán los mostrados desde la sección de Administración, accediendo a "Adminsitrar Miembros".
+
+Variables
+----------------------------------------------
+*@
+@{
+string nombrePerfil = "";
+string urlPerfil = "";
+string urlFoto = "";
+string tipoPerfil = "";
+
+// Identidad del usuario actual
+UserIdentityModel IdentidadActual = Html.GetIdentidadActual();
+// Controlar si dispone o no de fotografía el usuario
+bool containsUrlFoto = true;
+
+}
+
+@*
+----------------------------------------------------------------
+-------------------- Vista para visualizar los resultados del buscador de "Perfiles" --------------------*@
+
+@if (Model != null)
+{
+    @* Carga de datos en variables para el posterior uso en la vista *@
+    if (Model.TypeProfile == ProfileType.Personal || Model.TypeProfile == ProfileType.Teacher)
+    {
+        tipoPerfil = "persona conImagenPerfil";
+        nombrePerfil = Model.NamePerson;
+        urlPerfil = Model.UrlPerson;
+
+        if (Model.UrlFoto != null)
+        {
+            urlFoto = Model.UrlFoto;
+        }
+        else
+        {
+            tipoPerfil = "persona";
+            urlFoto = Html.ObtenerFotoAnonimaDePerfil(Model.TypeProfile);
+            containsUrlFoto = false;
+        }
+    }
+    else if (Model.TypeProfile == ProfileType.ProfessionalPersonal)
+    {
+        tipoPerfil = "persona conImagenPerfil";
+        nombrePerfil = Model.NamePerson + " " + ConstantesDeSeparacion.SEPARACION_CONCATENADOR + " " + Model.NameOrganization;
+        urlPerfil = Model.UrlPerson;
+
+        if (Model.UrlFoto != null)
+        {
+            urlFoto = Model.UrlFoto;
+        }
+        else
+        {
+            tipoPerfil = "persona";
+            urlFoto = Html.ObtenerFotoAnonimaDePerfil(Model.TypeProfile);
+            containsUrlFoto = false;
+        }
+    }
+    else
+    {
+        tipoPerfil = "organizacion conImagenPerfil";
+        nombrePerfil = Model.NameOrganization;
+        urlPerfil = Model.UrlOrganization;
+
+        if (Model.UrlFoto != null)
+        {
+            urlFoto = Model.UrlFoto;
+        }
+        else
+        {
+            tipoPerfil = "organizacion";
+            urlFoto = Html.ObtenerFotoAnonimaDePerfil(Model.TypeProfile);
+            containsUrlFoto = false;
+        }
+    }
+
+    @*Cada item encontrado de tipo Persona-Contacto. Se montarán en una tabla*@
+       <tr class="resource resource-profile" id="@Model.Key">
+           @* Nombre del usuario + Imagen del usuario *@
+           <td class="td-nombre">
+                <div class="user-miniatura">
+                   <div class="imagen-usuario-wrap">
+                       <div class="imagen @( (containsUrlFoto == false) ? "sinImagen" : null) ">
+                           @if (containsUrlFoto == false)
+                           {
+                               <span class="material-icons">person</span>
+                           }
+                           else
+                           {
+                               @* Imagen del usuario *@
+                               <span style="background-image: url(@Html.GetBaseUrlContent()@urlFoto);"></span>
+                           }
+                       </div>
+                   </div>
+
+			        <div class="nombre-usuario-wrap">
+				        @* Nombre corto y organización del usuario *@
+                        @if (!string.IsNullOrEmpty(urlPerfil))
+                        {
+                            <a href="@urlPerfil">
+                                <p class="nombre">@nombrePerfil</p>
+                                @if (Model.TypeProfile  == ProfileType.Organization) 
+                                { 
+                                    <p class="nombre-completo">@nombrePerfil @ConstantesDeSeparacion.SEPARACION_CONCATENADOR @Model.NameOrganization </p>
+                                }  
+                            </a>
+                        }
+                        else
+                        {
+                            <p class="nombre">@nombrePerfil</p>                           
+                            if (Model.TypeProfile  == ProfileType.Organization) 
+                            { 
+                                <p class="nombre-completo">@nombrePerfil @ConstantesDeSeparacion.SEPARACION_CONCATENADOR @Model.NameOrganization </p>
+                            }  
+                        }
+			        </div>
+		        </div>
+           </td>
+           	@* Tipo de usuario *@
+	        <td id="rol_@Model.Key" class="td-rol">
+                <div class="spinner-border spinner-border-sm texto-primario" role="status">
+                    <span class="sr-only">Cargando ...</span>
+                </div>
+            </td>
+	        @* ¿Recibe boletín? (Sí/No) *@
+	        <td id="boletin_@Model.Key" class="td-boletin">
+                @* Mostrar loading hasta que se cargue la información del miembro *@
+                <div class="spinner-border spinner-border-sm texto-primario" role="status">
+                    <span class="sr-only">Cargando ...</span>
+                </div>
+            </td>
+	        @* ¿Está expulsado? (Sí/No) *@
+	        <td id="expulsado_@Model.Key" class="td-expulsado">
+                @* Mostrar loading hasta que se cargue la información del miembro *@
+                <div class="spinner-border spinner-border-sm texto-primario" role="status">
+                    <span class="sr-only">Cargando ...</span>
+                </div>
+            </td>
+	        @* ¿Está bloqueado? (Sí/No) *@
+	        <td id="bloqueado_@Model.Key" class="td-bloqueado">
+                @* Mostrar loading hasta que se cargue la información del miembro *@
+                <div class="spinner-border spinner-border-sm texto-primario" role="status">
+                    <span class="sr-only">Cargando ...</span>
+                </div>
+            </td>
+	        @* Fecha de registro *@
+	        <td class="td-fecha">
+                @if (!String.IsNullOrEmpty(Model.BornDate.ToString())){
+                    <span>@Model.BornDate.ToString("dd/MM/yyyy") </span>
+                }
+                else
+                {
+                    <span>-</span>
+                }
+            </td>
+            @* Acciones a realizar sobre el usuario*@
+            <td class="td-acciones">
+                @* Acciones solo permitidas para el Admin del proyecto *@
+                @if (IdentidadActual.IsProyectAdmin == true)
+                {
+                    //Html.PartialView("_partial-views/_list-actions-admin-profile", Model)
+                    @* Select que será el contendor de las acciones permitidas *@
+                    <div id="accionesListado_@Model.Key.ToString()_@Guid.NewGuid()_@ViewBag.ProyectoID.ToString()" 
+                        class="dropdown dropdown-select group acciones noGridView">                        
+                            @* Aquí irán las acciones para cada "Perfil". Muestro un pequeño loading que será sobreescrito *@
+                            <div class="spinner-border spinner-border-sm texto-primario" role="status">
+                                <span class="sr-only">Cargando ...</span>
+                            </div>
+                            <small class="ml-1">Cargando ...</small>
+                    </div>                    
+                }
+            </td>
+       </tr>
+}
+
+
+
+
+
+
+
+

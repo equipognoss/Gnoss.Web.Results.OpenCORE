@@ -212,7 +212,7 @@ bool containsUrlFoto = true;
                                </li>
                            </ul>
                        }
-                       @* Contenedor de las acciones + Botón desplegar acciones: Mostrarlo sólo si el usuario dispone de permisos /  *@
+                       @* Contenedor de las acciones + Botón desplegar acciones: Mostrarlo sólo si el usuario dispone de permisos /  
                        @if (IdentidadActual.IsProyectAdmin == true) { 
                             <div class="acciones-recurso-listado">
                                <div class="dropdown">
@@ -230,9 +230,9 @@ bool containsUrlFoto = true;
                                         style="will-change: transform">
                                        <p class="dropdown-title pl-3 ml-3">Acciones</p>
                                        <span class="material-icons cerrar-dropdown">close</span>
-                                       @* Contenedor de las acciones a realizar al usuario (Bloquear, No enviar newsletter, Expulsar, Cambiar rol) *@
+                                       @* Contenedor de las acciones a realizar al usuario (Bloquear, No enviar newsletter, Expulsar, Cambiar rol) 
                                        <div id="accionesListado_@Model.Key.ToString()_@Guid.NewGuid()_@ViewBag.ProyectoID.ToString()" class="group acciones noGridView">
-                                           @* Aquí irán las acciones para cada "Perfil". Muestro un pequeño loading que será sobreescrito *@
+                                           @* Aquí irán las acciones para cada "Perfil". Muestro un pequeño loading que será sobreescrito 
                                            <div class="spinner-border spinner-border-sm texto-primario" role="status">
                                                <span class="sr-only">Cargando ...</span>
                                            </div>
@@ -242,6 +242,7 @@ bool containsUrlFoto = true;
                                </div>
                            </div>
                        }
+                       *@
                    </div>
                </div>
            </div>

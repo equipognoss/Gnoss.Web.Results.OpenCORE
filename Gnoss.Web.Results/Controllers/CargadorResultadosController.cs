@@ -19,6 +19,7 @@ using Es.Riam.Gnoss.CL.ParametrosProyecto;
 using Es.Riam.Gnoss.CL.Seguridad;
 using Es.Riam.Gnoss.CL.ServiciosGenerales;
 using Es.Riam.Gnoss.CL.Tesauro;
+using Es.Riam.Gnoss.CL.Trazas;
 using Es.Riam.Gnoss.Elementos.CMS;
 using Es.Riam.Gnoss.Elementos.Documentacion;
 using Es.Riam.Gnoss.Elementos.Identidad;
@@ -178,6 +179,8 @@ namespace ServicioCargaResultados
         {
             //TODO Javier esta clase esta en Es.Riam.Gnoss.Web.MVC.Controles hay que migrarla
             //MyVirtualPathProvider.listaRutasVirtuales.Clear();
+            VistaVirtualCL vistaVirtualCL = new VistaVirtualCL(mEntityContext, mLoggingService, mGnossCache, mRedisCacheWrapper, mConfigService, mServicesUtilVirtuosoAndReplication);
+            vistaVirtualCL.InvalidarVistasVirtualesEcosistemaEnCacheLocal();
             return Content("OK");
         }
 
@@ -289,7 +292,15 @@ namespace ServicioCargaResultados
             {
                 for (int i = 0; i < numCol; i++)
                 {
-                    string valor = (string)fila[i];
+                    string valor;
+                    try
+                    {
+                        valor = (string)fila[i];
+                    }
+                    catch (Exception e)
+                    {
+                        valor = "";
+                    }
 
                     if (mapearTypeSubType)
                     {
@@ -306,11 +317,12 @@ namespace ServicioCargaResultados
         }
         [HttpGet, HttpPost]
         [Route("CargarResultados")]
-        public ActionResult CargarResultados([FromForm] string pProyectoID, [FromForm] string pIdentidadID, [FromForm] bool pEsUsuarioInvitado, [FromForm] string pUrlPaginaBusqueda, [FromForm] bool pUsarMasterParaLectura, [FromForm] bool pAdministradorVeTodasPersonas, [FromForm] short pTipoBusqueda, [FromForm] string pGrafo, [FromForm] string pParametros_adiccionales, [FromForm] string pParametros, [FromForm] bool pPrimeraCarga, [FromForm] string pLanguageCode, [FromForm] int pNumeroParteResultados, [FromForm] string pFiltroContexto, [FromForm] bool? pJson, [FromForm] string tokenAfinidad)
+        public ActionResult CargarResultados([FromForm] string pProyectoID, [FromForm] string pIdentidadID, [FromForm] bool pEsUsuarioInvitado, [FromForm] string pUrlPaginaBusqueda, [FromForm] bool pUsarMasterParaLectura, [FromForm] bool pAdministradorVeTodasPersonas, [FromForm] short pTipoBusqueda, [FromForm] string pGrafo, [FromForm] string pParametros_adiccionales, [FromForm] string pParametros, [FromForm] bool pPrimeraCarga, [FromForm] string pLanguageCode, [FromForm] int pNumeroParteResultados, [FromForm] string pFiltroContexto, [FromForm] bool? pJson, [FromForm] string tokenAfinidad, [FromForm] string pListaRecursosExcluidos)
         {
             try
             {
                 // mLoggingService.GuardarLog($"ProyectoID: {pProyectoID} |||| pIdentidadID: {pIdentidadID} |||| pEsUsuarioInvitado: {pEsUsuarioInvitado} |||| pUrlPaginaBusqueda: {pUrlPaginaBusqueda}");
+                //mLoggingService.GuardarLogError("Entra a CargarResultados");
                 if (!string.IsNullOrEmpty(tokenAfinidad))
                 {
                     new SeguridadCL(mEntityContext, mLoggingService, mRedisCacheWrapper, mConfigService, mServicesUtilVirtuosoAndReplication).ObtenerConexionAfinidad(tokenAfinidad.Replace("\"", ""));
@@ -335,7 +347,7 @@ namespace ServicioCargaResultados
 
                 pLanguageCode = pLanguageCode.Replace("\"", "");
                 pFiltroContexto = pFiltroContexto.Replace("\"", "");
-
+                mCargadorResultadosModel.ListaRecursosExcluidos = ObtenerListaDeExcluidos(pListaRecursosExcluidos);
                 mCargadorResultadosModel.LanguageCode = pLanguageCode;
 
                 //Url desde la que ha llegado
@@ -790,7 +802,8 @@ namespace ServicioCargaResultados
                         ViewBag.BaseUrlContent = BaseURLsContent[0];
                         ViewBag.BaseUrlStatic = BaseURLStatic;
                         ViewBag.BaseUrlPersonalizacion = mControladorBase.BaseURLPersonalizacion;
-
+                        ViewBag.BaseUrlPersonalizacionEcosistema = mControladorBase.BaseURLPersonalizacionEcosistema;
+                        ViewBag.GeneradorURLs = mControladorBase.UrlsSemanticas;
                         List<ObjetoBuscadorModel> ListaResultados = new List<ObjetoBuscadorModel>();
 
                         foreach (string idResultado in mCargadorResultadosModel.ListaIdsResultado.Keys)
@@ -901,6 +914,9 @@ namespace ServicioCargaResultados
                         resultadoModel.NumeroPaginaActual = mCargadorResultadosModel.PaginaActual;
                         resultadoModel.UrlBusqueda = mCargadorResultadosModel.UrlNavegador;
                         resultadoModel.ListaResultados = ListaResultados;
+                        // Asignar propiedad para saber si la petición se ha realizado desde Administración o no
+                        resultadoModel.AdministradorVeTodasPersonas = pAdministradorVeTodasPersonas;
+
                         //foreach (ObjetoBuscadorModel)
                         //{
                         //    if(UtilIdiomas.LanguageCode)
@@ -1147,11 +1163,10 @@ namespace ServicioCargaResultados
         }
         [HttpGet, HttpPost]
         [Route("CargarResultadosContexto")]
-        public ActionResult CargarResultadosContexto(string pProyectoID, string pParametros, bool pPrimeraCarga, string pLanguageCode, short pTipoBusqueda, int pNumRecursosPagina, string pGrafo, string pUrlPaginaBusqueda, string pFiltroContexto, bool pEsBot, bool pMostrarEnlaceOriginal, string pNamespacesExtra, string pListaItemsBusqueda, string pResultadosEliminar, bool pNuevaPestanya, string pParametrosAdicionales, string pIdentidadID, bool pEsUsuarioInvitado)
+        public ActionResult CargarResultadosContexto([FromForm] string pProyectoID, [FromForm] string pParametros, [FromForm] bool pPrimeraCarga, [FromForm] string pLanguageCode, short pTipoBusqueda, [FromForm] int pNumRecursosPagina, [FromForm] string pGrafo, [FromForm] string pUrlPaginaBusqueda, [FromForm] string pFiltroContexto, [FromForm] bool pEsBot, [FromForm] bool pMostrarEnlaceOriginal, [FromForm] string pNamespacesExtra, [FromForm] string pListaItemsBusqueda, [FromForm] string pResultadosEliminar, [FromForm] bool pNuevaPestanya, [FromForm] string pParametrosAdicionales, [FromForm] string pIdentidadID, [FromForm] bool pEsUsuarioInvitado)
         {
             try
             {
-                IniciarTraza();
                 mLoggingService.AgregarEntrada("Empieza carga de contextos");
                 TipoFichaResultados tipoFicha = TipoFichaResultados.Contexto;
 
@@ -1159,7 +1174,15 @@ namespace ServicioCargaResultados
 
                 pProyectoID = pProyectoID.Replace("\"", "");
                 pGrafo = pGrafo.Replace("\"", "");
-                pParametrosAdicionales = pParametrosAdicionales.Replace("\"", "");
+                if (!string.IsNullOrEmpty(pParametrosAdicionales))
+                {
+                    pParametrosAdicionales = pParametrosAdicionales.Replace("\"", "");
+                }
+                else
+                {
+                    pParametrosAdicionales = string.Empty;
+                }
+                
                 pParametros = pParametros.Replace("\"", "");
                 pLanguageCode = pLanguageCode.Replace("\"", "");
 
@@ -1168,7 +1191,7 @@ namespace ServicioCargaResultados
                     pIdentidadID = pIdentidadID.Replace("\"", "");
                 }
 
-                if (pFiltroContexto.Length > 2 && pFiltroContexto.StartsWith("\"") && pFiltroContexto.EndsWith("\""))
+                if (!string.IsNullOrEmpty(pFiltroContexto) && pFiltroContexto.Length > 2 && pFiltroContexto.StartsWith("\"") && pFiltroContexto.EndsWith("\""))
                 {
                     pFiltroContexto = pFiltroContexto.Substring(1, pFiltroContexto.Length - 2);
                 }
@@ -1218,11 +1241,13 @@ namespace ServicioCargaResultados
                         diccionarioPestanyas.Add(filaPestaña.ProyectoPestanyaMenu.Ruta.ToLower(), filaPestaña.CampoFiltro);
                     }
                 }
-
-                if (diccionarioPestanyas.ContainsKey(pUrlPaginaBusqueda.ToLower().Substring(pUrlPaginaBusqueda.LastIndexOf("/") + 1)))
+                if (!string.IsNullOrEmpty(pUrlPaginaBusqueda))
                 {
-                    pParametrosAdicionales += diccionarioPestanyas[pUrlPaginaBusqueda.ToLower().Substring(pUrlPaginaBusqueda.LastIndexOf("/") + 1)];
-                }
+                    if (diccionarioPestanyas.ContainsKey(pUrlPaginaBusqueda.ToLower().Substring(pUrlPaginaBusqueda.LastIndexOf("/") + 1)))
+                    {
+                        pParametrosAdicionales += diccionarioPestanyas[pUrlPaginaBusqueda.ToLower().Substring(pUrlPaginaBusqueda.LastIndexOf("/") + 1)];
+                    }
+                } 
 
                 #endregion
 
@@ -1282,7 +1307,14 @@ namespace ServicioCargaResultados
                 }
                 mLoggingService.AgregarEntrada("Carga de contexto finalizada");
 
-                return Json(listaRecursosDevolver, new JsonSerializerSettings());
+                JsonSerializerSettings jsonSerializerSettings = new JsonSerializerSettings
+                {
+                    PreserveReferencesHandling = PreserveReferencesHandling.Objects,
+                    TypeNameHandling = TypeNameHandling.All
+                };
+                string respuesta = JsonConvert.SerializeObject(listaRecursosDevolver, jsonSerializerSettings);
+                return Content(respuesta);
+                //return Json(listaRecursosDevolver, new JsonSerializerSettings());
             }
             catch (ThreadAbortException) { }
             catch (Exception ex)
@@ -1771,10 +1803,11 @@ namespace ServicioCargaResultados
         /// <returns>HTML con los resultados</returns>
         [HttpGet, HttpPost]
         [Route("ObtenerFichaRecurso")]
-        public ActionResult ObtenerFichaRecurso(string proyecto, string identidad, string languageCode, string documentoID, string urlBusqueda, Guid pPersonaID)
+        public ActionResult ObtenerFichaRecurso([FromForm] string proyecto, [FromForm] string identidad, [FromForm] string languageCode, [FromForm] string documentoID, [FromForm] string urlBusqueda, [FromForm] Guid pPersonaID)
         {
             try
             {
+                mLoggingService.GuardarLogError($"Entra a ObtenerFichaRecurso: \n proyecto -> {proyecto}, \n identidad -> {identidad}, \n languageCode -> {languageCode}, \n documentoID -> {documentoID}, \n urlBusqueda -> {urlBusqueda}, \n pPersonaID -> {pPersonaID.ToString()}");
                 proyecto = proyecto.Replace("\"", "");
                 mCargadorResultadosModel.ProyectoSeleccionado = new Guid(proyecto);
                 mCargadorResultadosModel.LanguageCode = languageCode.Replace("\"", "");
@@ -1849,7 +1882,7 @@ namespace ServicioCargaResultados
                 ViewBag.MostrarPersonasEnCatalogo = mCargadorResultadosModel.FilaParametroGeneral.MostrarPersonasEnCatalogo;
                 ViewBag.ProyectoID = mCargadorResultadosModel.Proyecto.Clave;
                 ViewBag.BaseUrlContent = BaseURLsContent[0];
-
+                ViewBag.GeneradorURLs = mControladorBase.UrlsSemanticas;
                 List<ObjetoBuscadorModel> ListaResultados = new List<ObjetoBuscadorModel>();
 
                 foreach (ResourceModel resource in listaRecursosModel.Values)
@@ -2255,49 +2288,30 @@ namespace ServicioCargaResultados
             return objetoPeticion;
         }
 
-        #endregion
-
-        #region Métodos de trazas
         [NonAction]
-        private void IniciarTraza()
+        private List<Guid> ObtenerListaDeExcluidos(string pLista)
         {
-            if (mTraza == null)
-            {
-                GnossCacheCL gnossCacheCL = new GnossCacheCL(mEntityContext, mLoggingService, mRedisCacheWrapper, mConfigService, mServicesUtilVirtuosoAndReplication);
-                object trazaHabilitada = gnossCacheCL.ObtenerDeCache("traza" + mControladorBase.DominoAplicacion);//72horas
+            List<Guid> listaExcluidos = new List<Guid>();
 
-                if (trazaHabilitada != null && (bool)trazaHabilitada)
-                {
-                    LoggingService.TrazaHabilitada = true;
-                }
-                else
-                {
-                    LoggingService.TrazaHabilitada = false;
-                }
-            }
-        }
-        [NonAction]
-        private string ObtenerRutaTraza()
-        {
-            string ruta = Path.Combine(mEnv.ContentRootPath, "trazas");
-            //string ruta = this.Server.MapPath(System.Web.HttpContext.Current.Request.ApplicationPath + "\\trazas");
-
-            if (!string.IsNullOrEmpty(mControladorBase.DominoAplicacion))
+            if (!string.IsNullOrEmpty(pLista))
             {
-                ruta += "\\" + mControladorBase.DominoAplicacion;
-                if (!Directory.Exists(ruta))
+                string[] listaIDs = pLista.Split(',');
+
+                foreach (string id in listaIDs)
                 {
-                    Directory.CreateDirectory(ruta);
+                    Guid idGuid;
+
+                    if (!string.IsNullOrEmpty(id) && Guid.TryParse(id, out idGuid))
+                    {
+                        listaExcluidos.Add(idGuid);
+                    }
                 }
             }
 
-            ruta += "\\traza_" + DateTime.Now.ToString("yyyy-MM-dd") + ".txt";
-
-            return ruta;
+            return listaExcluidos;
         }
-
-
         #endregion
+
 
         #endregion
 

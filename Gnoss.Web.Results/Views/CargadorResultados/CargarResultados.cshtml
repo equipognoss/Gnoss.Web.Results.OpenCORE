@@ -72,11 +72,22 @@ Variables
                         }
                         else if (resultado is ProfileModel)
                         {
-                            @Html.PartialView("_ResultadoPerfil", (ProfileModel)resultado)
+                            // Mostrar la vista de _ResultadoPerfilAdmin si la petición se ha realizado desde Administración (Administrar Miembros)
+                            if (Model.AdministradorVeTodasPersonas == true){
+                                @Html.PartialView("_ResultadoPerfilAdmin", (ProfileModel)resultado)
+                            }else{
+                                @Html.PartialView("_ResultadoPerfil", (ProfileModel)resultado)
+                            }                            
                         }
                         else if (resultado is GroupCardModel)
-                        {
-                            @Html.PartialView("_ResultadoGrupo", (GroupCardModel)resultado)
+                        {                            
+                            // Mostrar la vista de _ResultadoPerfilAdmin si la petición se ha realizado desde Administración (Administrar Miembros)
+                            if (Model.AdministradorVeTodasPersonas == true){                                
+                                @Html.PartialView("_ResultadoGrupoAdmin", (GroupCardModel)resultado)
+                            }else{                                
+                                @Html.PartialView("_ResultadoGrupo", (GroupCardModel)resultado)
+                            }  
+
                         }
                         else if (resultado is MessageModel)
                         {
@@ -111,9 +122,16 @@ Variables
                     <p>@Model.TextoSinResultados</p>
                 }
             @*</div>*@
-            @* Paginador de resultados - Sustituido por scrolling de resultados                         
-            @Html.PartialView("_partial-views/_results-pagination", Model)  
-            *@
+
+            @* Paginador de resultados para Administración de Miembros - En Front sustituido por scrolling de resultados. En Administración usar paginador *@
+            if (Model.AdministradorVeTodasPersonas == true){
+                <tr>
+                    <td colspan="7" style="border-bottom: none">
+                        @Html.PartialView("_partial-views/_results-pagination", Model)
+                    </td>
+                </tr>
+            }
+            
     @*
         </div>
     </div>

@@ -212,7 +212,8 @@ int cont = 0;
                         @* Contenido o descripción preliminar del Recurso *@
                         @if ((Model.ViewSettings == null) || (!Model.MapView && (Model.ViewSettings.DescriptionOnList || Model.ViewSettings.DescriptionOnMosaic)) || (Model.MapView && Model.ViewSettings.DescriptionOnMap))
                         {
-                            if (!string.IsNullOrEmpty(Model.Description) && ((Model.Description.Substring(0, 3) == "<p ") || (Model.Description.Substring(0, 3) == "<p>")))
+                            // Descripción del recurso
+                            if (!string.IsNullOrEmpty(Model.Description))                            
                             {
                                 <p>
                                 @{                                    
@@ -221,42 +222,36 @@ int cont = 0;
                                 }
                                 </p>
                             }
-                            else
-                            {
-                                <p>
-                                    @{
-                                        String descriptionFormatted = Html.CleanHtmlParagraphsStringHtml(Model.Description);
-                                        @Html.Raw(Html.TruncateString(@Html.CleanHtmlFromMultimediaItems(descriptionFormatted), 800))
-                                    }                                                                           
-                                </p>                                
-                            }
                         }
                     </div>
                 </div>
+            </div>
 
-                @* Opciones de visualización aplicando clase al div (Funcionalidad mantenida para el nuevo Front). *@
-                @if (Model.ViewSettings != null)
-                {
-                    if (!Model.MapView && !string.IsNullOrEmpty(Model.ViewSettings.InfoExtraList))
+
+            @* Opciones de visualización aplicando clase al div (Funcionalidad mantenida para el nuevo Front). *@
+            @if (Model.ViewSettings != null)
+            {                
+                <div class="content-properties">
+                    @if (!Model.MapView && !string.IsNullOrEmpty(Model.ViewSettings.InfoExtraList))
                     {
-                        <div class="listado">                            
+                        <div class="listado">
                             @Html.Raw(Model.ViewSettings.InfoExtraList)
                         </div>
                     }
-                    if (!Model.MapView && !string.IsNullOrEmpty(Model.ViewSettings.InfoExtraMosaic))
+                    @if (!Model.MapView && !string.IsNullOrEmpty(Model.ViewSettings.InfoExtraMosaic))
                     {
                         <div class="mosaico">
                             @Html.Raw(Model.ViewSettings.InfoExtraMosaic)
                         </div>
                     }
-                    if (Model.MapView && !string.IsNullOrEmpty(Model.ViewSettings.InfoExtraMap))
+                    @if (Model.MapView && !string.IsNullOrEmpty(Model.ViewSettings.InfoExtraMap))
                     {
                         <div class="mapa">
                             @Html.Raw(Model.ViewSettings.InfoExtraMap)
                         </div>
                     }
-                }
-            </div>
+                </div>
+            }
         </div>
 
         @* Información adicional del recurso (Categorías del recurso, Etiquetas, Nº Vistas, Likes, Seguir al editor/autor) *@

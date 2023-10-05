@@ -228,10 +228,10 @@ List<ProfileModel> listProfileModelHidden = new List<ProfileModel>();
                                                 
 }
 <script lang="javascript" type="text/javascript">
-    $(document).ready(function () {
-        let fechamoment = "@Model.ShippingDate.ToString("yyyy-MM-dd")" + "T" + "@Model.ShippingDate.ToString("HH:mm:ss")" + "Z";
-        var fechaServer = moment(fechamoment);
-        var fechaMsj = fechaServer.tz(Intl.DateTimeFormat().resolvedOptions().timeZone).format('DD/MM/YY HH:mm');
-        $("#@Model.Key").text(fechaMsj);
-    });
+    (function ($) {
+        let fechaMoment = "@Model.ShippingDate.ToString("yyyy-MM-dd")" + "T" + "@Model.ShippingDate.ToString("HH:mm:ss")" + "Z";
+        const fechaMsj = convertDateFromUTC(fechaMoment);        
+        const dateLabel = $("#@Model.Key");
+        dateLabel.text(fechaMsj);                       
+    })(jQuery);
 </script>

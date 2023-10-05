@@ -1,0 +1,69 @@
+﻿@model Es.Riam.Gnoss.Web.MVC.Models.GroupCardModel
+@*
+Descripción
+-----------------------------------------------
+Vista que se utiliza para mostrar los resultados de tipo "Grupo". Estos grupos serán los mostrados desde la sección de Administración, accediendo a "Adminstrar Miembros".
+
+Variables
+----------------------------------------------
+*@
+@{
+
+}
+
+@*
+----------------------------------------------------------------
+-------------------- Vista para visualizar los resultados del buscador de "Grupos" --------------------*@
+
+@if (Model != null)
+{   
+        @*Cada item encontrado de tipo Grupo. Se montarán en una tabla*@
+       <tr>
+           @* Nombre del usuario + Imagen del usuario *@
+           <td class="td-nombre">
+                <div class="user-miniatura">
+                    <div class="imagen-usuario-wrap">
+                        <div class="imagen sinImagen">                                                
+                            <span class="material-icons">groups</span>                                                
+                        </div>
+                    </div>
+                    @* Contenedor del nombre del usuario *@
+                    <div class="nombre-usuario-wrap">
+                        @if (!string.IsNullOrEmpty(@Model.UrlGroup))
+                        {
+                            <a href="@Model.UrlGroup">
+                                <p class="nombre">@Model.Name</p>
+                            </a>
+                        }
+                        else
+                        {
+                            <p class="nombre">@Model.Name</p>                        
+                        }
+                    </div>
+                </div>
+           </td>
+           	@* Tipo de usuario *@
+	        <td class="td-rol">@Html.GetText("DEVTOOLS","GRUPO")</td>
+	        @* ¿Recibe boletín? (Sí/No) *@
+	        <td class="td-boletin">-</td>
+	        @* ¿Está expulsado? (Sí/No) *@
+	        <td class="td-expulsado">-</td>
+	        @* ¿Está bloqueado? (Sí/No) *@
+	        <td class="td-bloqueado">-</td>
+	        @* Fecha de registro *@
+	        <td class="td-fecha">                
+                <span>-</span>                
+            </td>
+            @* Acciones a realizar sobre el usuario*@
+            <td class="td-acciones">
+                @* Acciones no permitidas para grupos *@           
+            </td>
+       </tr>
+}
+
+
+
+
+
+
+

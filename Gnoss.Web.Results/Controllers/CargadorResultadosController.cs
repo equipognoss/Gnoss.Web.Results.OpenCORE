@@ -1999,6 +1999,7 @@ namespace ServicioCargaResultados
         {
             CommunityModel comunidad = new CommunityModel();
             comunidad.ListaPersonalizaciones = new List<string>();
+            comunidad.ListaPersonalizacionesDominio = new List<string>();
             comunidad.ListaPersonalizacionesEcosistema = new List<string>();
 
             if (pProyectoID != ProyectoAD.MetaProyecto)

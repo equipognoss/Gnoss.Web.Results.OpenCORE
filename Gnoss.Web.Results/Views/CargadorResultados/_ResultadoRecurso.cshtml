@@ -1,4 +1,5 @@
-﻿@model ResourceModel
+﻿@using static Es.Riam.Gnoss.Web.MVC.Models.ResourceModel
+@model ResourceModel
 
 @*
 Descripción
@@ -128,7 +129,7 @@ int cont = 0;
             <div class="check-wrapper">
                 @* Checkbox que permitirá seleccionar/deseleccionar *@
                 <div class="custom-control custom-checkbox">
-                    <input type="checkbox" class="custom-control-input ListaRecursosCheckBox" id="@idCheck">
+                        <input type="checkbox" class="custom-control-input ListaRecursosCheckBox" id="@idCheck" aria-label="@Html.GetText("COMMON","MARCAR/DESMARCARRECURSO")">
                     <label class="custom-control-label" for="@idCheck"></label>
                 </div>
             </div>
@@ -215,13 +216,23 @@ int cont = 0;
                             // Descripción del recurso
                             if (!string.IsNullOrEmpty(Model.Description))                            
                             {
-                                <p>
-                                @{                                    
-                                    String descriptionFormatted = Html.CleanHtmlParagraphsStringHtml(Model.Description);                                    
-                                    @Html.Raw(Html.TruncateString(@Html.CleanHtmlFromMultimediaItems(descriptionFormatted), 800))
+                                    @if(Model.TypeDocument != DocumentType.Newsletter)
+                                    {
+                                        <p>
+                                            @{
+                                                String descriptionFormatted = Html.CleanHtmlParagraphsStringHtml(Model.Description);
+                                                @Html.Raw(Html.TruncateString(@Html.CleanHtmlFromMultimediaItems(descriptionFormatted), 800))
+                                            }
+                                        </p>
+                                    }
+                                    else
+                                    {
+                                        //Si es newsletter, al ser html la descripción no se pinta
+                                        <p>
+                                            Newsletter.
+                                        </p>
+                                    }
                                 }
-                                </p>
-                            }
                         }
                     </div>
                 </div>

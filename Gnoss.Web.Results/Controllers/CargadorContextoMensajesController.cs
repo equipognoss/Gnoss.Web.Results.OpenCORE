@@ -167,7 +167,7 @@ namespace ServicioCargaResultados
                         proyectoID = mCargadorResultadosModel.Proyecto.FilaProyecto.ProyectoID;
                     }
 
-                    mUtilIdiomas = new UtilIdiomas(mCargadorResultadosModel.LanguageCode, proyectoID, mCargadorResultadosModel.Proyecto.PersonalizacionID, PersonalizacionEcosistemaID, mLoggingService, mEntityContext, mConfigService);
+                    mUtilIdiomas = new UtilIdiomas(mCargadorResultadosModel.LanguageCode, proyectoID, mCargadorResultadosModel.Proyecto.PersonalizacionID, PersonalizacionEcosistemaID, mLoggingService, mEntityContext, mConfigService, mRedisCacheWrapper);
                     //Establecemos el CultureInfo
                     CultureInfo cultureInfo = Thread.CurrentThread.CurrentCulture;
                     switch (UtilIdiomas.LanguageCode)
@@ -349,7 +349,7 @@ namespace ServicioCargaResultados
             Identidad identidadActual = gestorIdentidad.ListaIdentidades[identidadID];
             mCargadorResultadosModel.IdentidadActual = identidadActual;
 
-            UtilIdiomas utilIdiomas = new UtilIdiomas(pLanguageCode, mLoggingService, mEntityContext, mConfigService);
+            UtilIdiomas utilIdiomas = new UtilIdiomas(pLanguageCode, mLoggingService, mEntityContext, mConfigService, mRedisCacheWrapper);
 
             //obtenemos los mensajes relacionados con el mensaje actual
             FacetadoCN facetadoCN = new FacetadoCN("acidHome_Master", mUtilServicios.UrlIntragnoss, "", "ColaActualizarVirtuosoHome", mEntityContext, mLoggingService, mConfigService, mVirtuosoAD, mServicesUtilVirtuosoAndReplication);
@@ -451,7 +451,7 @@ namespace ServicioCargaResultados
 
             if (pProyectoID != ProyectoAD.MetaProyecto)
             {
-                comunidad.Url = new GnossUrlsSemanticas(mLoggingService, mEntityContext, mConfigService).ObtenerURLComunidad(UtilIdiomas, BaseURLIdioma, mCargadorResultadosModel.Proyecto.NombreCorto);
+                comunidad.Url = new GnossUrlsSemanticas(mLoggingService, mEntityContext, mConfigService, mServicesUtilVirtuosoAndReplication).ObtenerURLComunidad(UtilIdiomas, BaseURLIdioma, mCargadorResultadosModel.Proyecto.NombreCorto);
             }
             else
             {

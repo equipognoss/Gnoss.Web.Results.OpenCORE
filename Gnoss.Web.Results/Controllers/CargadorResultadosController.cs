@@ -129,7 +129,7 @@ namespace ServicioCargaResultados
 
         private EntityContext mEntityContext;
         private LoggingService mLoggingService;
-        private RedisCacheWrapper mRedisCacheWrapper;
+        
         private ConfigService mConfigService;
         private VirtuosoAD mVirtuosoAD;
         private GnossCache mGnossCache;
@@ -573,32 +573,32 @@ namespace ServicioCargaResultados
                             {
                                 if (!mCargadorResultadosModel.ParametroProyecto.ContainsKey(ParametroAD.ProyectoSinNombreCortoEnURL) || !mCargadorResultadosModel.ParametroProyecto[ParametroAD.ProyectoSinNombreCortoEnURL].Equals("1"))
                                 {
-                                    baseUrlBusqueda = "/" + UtilIdiomas.GetText("URLSEM", "COMUNIDAD") + "/" + mCargadorResultadosModel.Proyecto.NombreCorto + "/" + url;
+                                    baseUrlBusqueda = $"/{UtilIdiomas.GetText("URLSEM", "COMUNIDAD")}/{mCargadorResultadosModel.Proyecto.NombreCorto}/{url}";
                                 }
                                 else
                                 {
-                                    baseUrlBusqueda = "/" + url;
+                                    baseUrlBusqueda = $"/{url}";
                                 }
                             }
                             else if (mCargadorResultadosModel.IdentidadActual.TrabajaConOrganizacion)
                             {
-                                baseUrlBusqueda = "/" + UtilIdiomas.GetText("URLSEM", "IDENTIDAD") + "/" + mCargadorResultadosModel.IdentidadActual.PerfilUsuario.NombreCortoOrg + "/" + url;
+                                baseUrlBusqueda = $"/{UtilIdiomas.GetText("URLSEM", "IDENTIDAD")}/{mCargadorResultadosModel.IdentidadActual.PerfilUsuario.NombreCortoOrg}/{url}";
                             }
                             else
                             {
-                                baseUrlBusqueda = "/" + url;
+                                baseUrlBusqueda = $"/{url}";
                             }
                             baseUrlBusqueda = urlBaseResultados + baseUrlBusqueda;
                         }
                         else if (!string.IsNullOrEmpty(pUrlPaginaBusqueda) && !mCargadorResultadosModel.Proyecto.Clave.Equals(ProyectoAD.MetaProyecto))
                         {
-                            if (pUrlPaginaBusqueda.Contains(UtilIdiomas.GetText("URLSEM", "COMUNIDAD") + "/" + mCargadorResultadosModel.Proyecto.NombreCorto + "/" + UtilIdiomas.GetText("URLSEM", "BUSQUEDAAVANZADA")))
+                            if (pUrlPaginaBusqueda.Contains($"{UtilIdiomas.GetText("URLSEM", "COMUNIDAD")}/{mCargadorResultadosModel.Proyecto.NombreCorto}/{UtilIdiomas.GetText("URLSEM", "BUSQUEDAAVANZADA")}"))
                             {
-                                baseUrlBusqueda = urlBaseResultados + "/" + UtilIdiomas.GetText("URLSEM", "COMUNIDAD") + "/" + mCargadorResultadosModel.Proyecto.NombreCorto + "/" + UtilIdiomas.GetText("URLSEM", "BUSQUEDAAVANZADA");
+                                baseUrlBusqueda = $"{urlBaseResultados}/{UtilIdiomas.GetText("URLSEM", "COMUNIDAD")}/{mCargadorResultadosModel.Proyecto.NombreCorto}/{UtilIdiomas.GetText("URLSEM", "BUSQUEDAAVANZADA")}";
                             }
                             else if (pUrlPaginaBusqueda.Contains(UtilIdiomas.GetText("URLSEM", "BUSQUEDAAVANZADA")))
                             {
-                                baseUrlBusqueda = urlBaseResultados + "/" + UtilIdiomas.GetText("URLSEM", "BUSQUEDAAVANZADA");
+                                baseUrlBusqueda = $"{urlBaseResultados}/{UtilIdiomas.GetText("URLSEM", "BUSQUEDAAVANZADA")}";
                             }
                         }
 
@@ -611,20 +611,23 @@ namespace ServicioCargaResultados
                             else
                             {
                                 baseUrlBusqueda = new Uri(UrlPaginaActual).PathAndQuery;
-                                baseUrlBusqueda = baseUrlBusqueda.Substring(IdiomaPagina.Length);
+                                if (baseUrlBusqueda.Contains(IdiomaPagina))
+                                {
+                                    baseUrlBusqueda = baseUrlBusqueda.Substring(IdiomaPagina.Length);
+                                }
                             }
                             if (baseUrlBusqueda.Contains("?"))
                             {
                                 baseUrlBusqueda = baseUrlBusqueda.Substring(0, baseUrlBusqueda.IndexOf("?"));
                             }
 
-                            if (mCargadorResultadosModel.Proyecto.Clave != ProyectoAD.MetaProyecto && baseUrlBusqueda.StartsWith("/" + UtilIdiomas.GetText("URLSEM", "COMUNIDAD") + "/" + mCargadorResultadosModel.Proyecto.NombreCorto + "/" + UtilIdiomas.GetText("URLSEM", "CATEGORIA")))
+                            if (mCargadorResultadosModel.Proyecto.Clave != ProyectoAD.MetaProyecto && baseUrlBusqueda.StartsWith($"/{UtilIdiomas.GetText("URLSEM", "COMUNIDAD")}/{mCargadorResultadosModel.Proyecto.NombreCorto}/{UtilIdiomas.GetText("URLSEM", "CATEGORIA")}"))
                             {
-                                baseUrlBusqueda = "/" + UtilIdiomas.GetText("URLSEM", "COMUNIDAD") + "/" + mCargadorResultadosModel.Proyecto.NombreCorto + "/" + UtilIdiomas.GetText("URLSEM", "BUSQUEDAAVANZADA");
+                                baseUrlBusqueda = $"/{UtilIdiomas.GetText("URLSEM", "COMUNIDAD")}/{mCargadorResultadosModel.Proyecto.NombreCorto}/{UtilIdiomas.GetText("URLSEM", "BUSQUEDAAVANZADA")}";
                             }
                             else if (mCargadorResultadosModel.Proyecto.Clave != ProyectoAD.MetaProyecto && baseUrlBusqueda.StartsWith("/" + UtilIdiomas.GetText("URLSEM", "CATEGORIA")))
                             {
-                                baseUrlBusqueda = "/" + UtilIdiomas.GetText("URLSEM", "BUSQUEDAAVANZADA");
+                                baseUrlBusqueda = $"/{UtilIdiomas.GetText("URLSEM", "BUSQUEDAAVANZADA")}";
                             }
                             else
                             {
@@ -667,21 +670,21 @@ namespace ServicioCargaResultados
 
                                     if (!string.IsNullOrEmpty(url))
                                     {
-                                        if (mCargadorResultadosModel.Proyecto.Clave != ProyectoAD.MetaProyecto && baseUrlBusqueda.StartsWith("/" + UtilIdiomas.GetText("URLSEM", "COMUNIDAD") + "/" + mCargadorResultadosModel.Proyecto.NombreCorto + "/" + url))
+                                        if (mCargadorResultadosModel.Proyecto.Clave != ProyectoAD.MetaProyecto && baseUrlBusqueda.StartsWith($"/{UtilIdiomas.GetText("URLSEM", "COMUNIDAD")}/{mCargadorResultadosModel.Proyecto.NombreCorto}/{url}"))
                                         {
-                                            baseUrlBusqueda = "/" + UtilIdiomas.GetText("URLSEM", "COMUNIDAD") + "/" + mCargadorResultadosModel.Proyecto.NombreCorto + "/" + url;
+                                            baseUrlBusqueda = $"/{UtilIdiomas.GetText("URLSEM", "COMUNIDAD")}/{mCargadorResultadosModel.Proyecto.NombreCorto}/{url}";
                                             paginaEncontrada = true;
                                             break;
                                         }
-                                        else if (mCargadorResultadosModel.IdentidadActual.TrabajaConOrganizacion && baseUrlBusqueda.StartsWith("/" + UtilIdiomas.GetText("URLSEM", "IDENTIDAD") + "/" + mCargadorResultadosModel.IdentidadActual.PerfilUsuario.NombreCortoOrg + "/" + url))
+                                        else if (mCargadorResultadosModel.IdentidadActual.TrabajaConOrganizacion && baseUrlBusqueda.StartsWith($"/{UtilIdiomas.GetText("URLSEM", "IDENTIDAD")}/{mCargadorResultadosModel.IdentidadActual.PerfilUsuario.NombreCortoOrg}/{url}"))
                                         {
-                                            baseUrlBusqueda = "/" + UtilIdiomas.GetText("URLSEM", "IDENTIDAD") + "/" + mCargadorResultadosModel.IdentidadActual.PerfilUsuario.NombreCortoOrg + "/" + url;
+                                            baseUrlBusqueda = $"/{UtilIdiomas.GetText("URLSEM", "IDENTIDAD")}/{mCargadorResultadosModel.IdentidadActual.PerfilUsuario.NombreCortoOrg}/{url}";
                                             paginaEncontrada = true;
                                             break;
                                         }
-                                        else if (baseUrlBusqueda.StartsWith("/" + url))
+                                        else if (baseUrlBusqueda.StartsWith($"/{url}"))
                                         {
-                                            baseUrlBusqueda = "/" + url;
+                                            baseUrlBusqueda = $"/{url}";
                                             paginaEncontrada = true;
                                             break;
                                         }
@@ -694,20 +697,19 @@ namespace ServicioCargaResultados
                                     {
                                         if (!string.IsNullOrEmpty(pest))
                                         {
-                                            if (mCargadorResultadosModel.Proyecto.Clave != ProyectoAD.MetaProyecto && baseUrlBusqueda.StartsWith("/" + UtilIdiomas.GetText("URLSEM", "COMUNIDAD") + "/" + mCargadorResultadosModel.Proyecto.NombreCorto + "/" + pest))
+                                            if (mCargadorResultadosModel.Proyecto.Clave != ProyectoAD.MetaProyecto && baseUrlBusqueda.StartsWith($"/{UtilIdiomas.GetText("URLSEM", "COMUNIDAD")}/{mCargadorResultadosModel.Proyecto.NombreCorto}/{pest}"))
                                             {
-                                                baseUrlBusqueda = "/" + UtilIdiomas.GetText("URLSEM", "COMUNIDAD") + "/" + mCargadorResultadosModel.Proyecto.NombreCorto + "/" + pest;
-                                                paginaEncontrada = true;
+                                                baseUrlBusqueda = $"/{UtilIdiomas.GetText("URLSEM", "COMUNIDAD")}/{mCargadorResultadosModel.Proyecto.NombreCorto}/{pest}";                                                
                                                 break;
                                             }
-                                            else if (mCargadorResultadosModel.IdentidadActual.TrabajaConOrganizacion && baseUrlBusqueda.StartsWith("/" + UtilIdiomas.GetText("URLSEM", "IDENTIDAD") + "/" + mCargadorResultadosModel.IdentidadActual.PerfilUsuario.NombreCortoOrg + "/" + pest))
+                                            else if (mCargadorResultadosModel.IdentidadActual.TrabajaConOrganizacion && baseUrlBusqueda.StartsWith($"/{UtilIdiomas.GetText("URLSEM", "IDENTIDAD")}/{mCargadorResultadosModel.IdentidadActual.PerfilUsuario.NombreCortoOrg}/{pest}"))
                                             {
-                                                baseUrlBusqueda = "/" + UtilIdiomas.GetText("URLSEM", "IDENTIDAD") + "/" + mCargadorResultadosModel.IdentidadActual.PerfilUsuario.NombreCortoOrg + "/" + pest;
+                                                baseUrlBusqueda = $"/{UtilIdiomas.GetText("URLSEM", "IDENTIDAD")}/{mCargadorResultadosModel.IdentidadActual.PerfilUsuario.NombreCortoOrg}/{pest}";
                                                 break;
                                             }
-                                            else if (baseUrlBusqueda.StartsWith("/" + pest))
+                                            else if (baseUrlBusqueda.StartsWith($"/{pest}"))
                                             {
-                                                baseUrlBusqueda = "/" + pest;
+                                                baseUrlBusqueda = $"/{pest}";
                                                 break;
                                             }
                                         }
@@ -766,7 +768,7 @@ namespace ServicioCargaResultados
                         Dictionary<Guid, CommentSearchModel> listaComentariosModel = new Dictionary<Guid, CommentSearchModel>();
                         if (listaComentariosID.Count > 0)
                         {
-                            Guid grafoID = Guid.Empty;
+                            Guid grafoID;
                             Guid.TryParse(pGrafo, out grafoID);
 
                             listaComentariosModel = controladorMVC.ObtenerComentariosPorID(listaComentariosID, grafoID);
@@ -787,7 +789,6 @@ namespace ServicioCargaResultados
                         Dictionary<Guid, PaginaCMSModel> listaPaginasCMSModel = new Dictionary<Guid, PaginaCMSModel>();
                         if (listaPaginasCMSID.Count > 0)
                         {
-                            // TODO: Alberto, crear un nuevo modelo o reutiliozar el de contactos?
                             listaPaginasCMSModel = controladorMVC.ObtenerPaginasCMSPorID(listaPaginasCMSID, proyectoID);
                         }
 
@@ -943,7 +944,7 @@ namespace ServicioCargaResultados
                                 };
                                 string respuesta = JsonConvert.SerializeObject(resultadoModel, jsonSerializerSettings);
 
-                                if (Request.Headers["User-Agent"].Contains("GnossInternalRequest"))
+                                if (Request.Headers["User-Agent"].ToString().Contains("GnossInternalRequest"))
                                 {
                                     using (MemoryStream input = new MemoryStream())
                                     {
@@ -1573,13 +1574,13 @@ namespace ServicioCargaResultados
                 #region Buscamos resultados
 
                 #region Resultados
-                string sparqlBusqueda = pSPARQL;
-                sparqlBusqueda += " LIMIT " + pNumItemsPag;
+                string sparqlBusqueda = $"{pSPARQL} LIMIT {pNumItemsPag}";
+
                 if (pNumPag > 0)
                 {
-                    sparqlBusqueda += " OFFSET " + pNumItemsPag * (pNumPag - 1);
+                    sparqlBusqueda += $" OFFSET {pNumItemsPag * (pNumPag - 1)}";
                 }
-                mCargadorResultadosModel.FacetadoCL.FacetadoCN.LeerDeVirtuoso("SPARQL " + sparqlBusqueda, "RecursosBusqueda", mCargadorResultadosModel.FacetadoDS, mCargadorResultadosModel.ProyectoSeleccionado.ToString().ToLower());
+                mCargadorResultadosModel.FacetadoCL.FacetadoCN.LeerDeVirtuoso($"SPARQL {sparqlBusqueda}", "RecursosBusqueda", mCargadorResultadosModel.FacetadoDS, mCargadorResultadosModel.ProyectoSeleccionado.ToString().ToLower());
                 #endregion
 
                 #region Num resultados
@@ -1587,15 +1588,21 @@ namespace ServicioCargaResultados
                 int indexOrderBy = sparqlNumero.ToLower().IndexOf("order by ");
                 int indexSelect = sparqlNumero.ToLower().IndexOf("select ");
                 int indexFrom = sparqlNumero.ToLower().IndexOf("from ");
+                int indexWhere = sparqlNumero.ToLower().IndexOf("where");
                 if (indexOrderBy > -1)
                 {
                     sparqlNumero = sparqlNumero.Substring(0, indexOrderBy);
                 }
                 if (indexSelect > -1 && indexFrom > -1)
                 {
-                    sparqlNumero = sparqlNumero.Substring(0, indexSelect) + " select (count(distinct ?s)) " + sparqlNumero.Substring(indexFrom);
+                    sparqlNumero = $"{sparqlNumero.Substring(0, indexSelect)} select (count(distinct ?s)) {sparqlNumero.Substring(indexFrom)}";
                 }
-                mCargadorResultadosModel.FacetadoCL.FacetadoCN.LeerDeVirtuoso("SPARQL " + sparqlNumero, "NResultadosBusqueda", mCargadorResultadosModel.FacetadoDS, mCargadorResultadosModel.ProyectoSeleccionado.ToString().ToLower());
+                else if(indexSelect > -1 && indexWhere > -1)
+                {
+                    sparqlNumero = $"{sparqlNumero.Substring(0, indexSelect)} select (count(distinct ?s)) {sparqlNumero.Substring(indexWhere)}";
+                }
+
+                mCargadorResultadosModel.FacetadoCL.FacetadoCN.LeerDeVirtuoso($"SPARQL {sparqlNumero}", "NResultadosBusqueda", mCargadorResultadosModel.FacetadoDS, mCargadorResultadosModel.ProyectoSeleccionado.ToString().ToLower());
                 #endregion
 
                 if (mCargadorResultadosModel.FacetadoDS.Tables.Contains("NResultadosBusqueda"))
@@ -1676,10 +1683,10 @@ namespace ServicioCargaResultados
                 string url = HttpContext.Request.Path;
                 if (!url.Contains("?"))
                 {
-                    url += "?" + HttpContext.Request.Query.ToString();
+                    url += $"?{HttpContext.Request.Query.ToString()}";
                 }
 
-                mUtilServicios.EnviarErrorYGuardarLog("Error: " + ex.Message + "\r\nPila: " + ex.StackTrace + "\r\nLlamada: " + url, "error", mCargadorResultadosModel.EsBot);
+                mUtilServicios.EnviarErrorYGuardarLog($"Error: {ex.Message}\r\nPila: {ex.StackTrace}\r\nLlamada: {url}", "error", mCargadorResultadosModel.EsBot);
             }
 
             return new EmptyResult();
@@ -1903,6 +1910,11 @@ namespace ServicioCargaResultados
                 CargarPersonalizacion(mCargadorResultadosModel.ProyectoSeleccionado, controladorMVC);
 
                 string funcionCallBack = HttpContext.Request.Query["callback"];
+
+                if (string.IsNullOrEmpty(funcionCallBack))
+                {
+                    funcionCallBack = HttpContext.Request.Form["callback"];
+				}
                 string resultado = "";
                 using (StringWriter sw = new StringWriter())
                 {
@@ -1916,9 +1928,13 @@ namespace ServicioCargaResultados
                 }
 
                 //Devuelvo la respuesta en el response de la petición
+                string response = $"{funcionCallBack}({{\"d\":{System.Text.Json.JsonSerializer.Serialize(resultado)}}});";
+                if (string.IsNullOrEmpty(funcionCallBack))
+                {
+                    response = $"{{\"d\":{System.Text.Json.JsonSerializer.Serialize(resultado)}}}";
+                }
 
-                HttpContext.Response.ContentType = "text/plain";
-                HttpContext.Response.WriteAsync(funcionCallBack + "({\"d\":" + System.Text.Json.JsonSerializer.Serialize(resultado) + "});");
+                return Ok(response);
             }
             catch (ThreadAbortException) { }
             catch (Exception ex)
@@ -2004,7 +2020,7 @@ namespace ServicioCargaResultados
 
             if (pProyectoID != ProyectoAD.MetaProyecto)
             {
-                comunidad.Url = new GnossUrlsSemanticas(mLoggingService, mEntityContext, mConfigService).ObtenerURLComunidad(UtilIdiomas, BaseURLIdioma, mCargadorResultadosModel.Proyecto.NombreCorto);
+                comunidad.Url = new GnossUrlsSemanticas(mLoggingService, mEntityContext, mConfigService, mServicesUtilVirtuosoAndReplication).ObtenerURLComunidad(UtilIdiomas, BaseURLIdioma, mCargadorResultadosModel.Proyecto.NombreCorto);
             }
             else
             {
@@ -2480,7 +2496,7 @@ namespace ServicioCargaResultados
                         proyectoID = mCargadorResultadosModel.Proyecto.FilaProyecto.ProyectoID;
                     }
 
-                    mUtilIdiomas = new UtilIdiomas(mCargadorResultadosModel.LanguageCode, proyectoID, mCargadorResultadosModel.Proyecto.PersonalizacionID, mControladorBase.PersonalizacionEcosistemaID, mLoggingService, mEntityContext, mConfigService);
+                    mUtilIdiomas = new UtilIdiomas(mCargadorResultadosModel.LanguageCode, proyectoID, mCargadorResultadosModel.Proyecto.PersonalizacionID, mControladorBase.PersonalizacionEcosistemaID, mLoggingService, mEntityContext, mConfigService, mRedisCacheWrapper);
                     //Establecemos el CultureInfo
                     CultureInfo cultureInfo = System.Threading.Thread.CurrentThread.CurrentCulture;
                     switch (UtilIdiomas.LanguageCode)

@@ -4,22 +4,14 @@ Descripción
 -----------------------------------------------
 Vista que se utiliza para mostrar los resultados de tipo "Grupo". Estos grupos serán los mostrados desde la sección de Administración, accediendo a "Adminstrar Miembros".
 
-Variables
-----------------------------------------------
-*@
-@{
-
-}
-
-@*
 ----------------------------------------------------------------
 -------------------- Vista para visualizar los resultados del buscador de "Grupos" --------------------*@
 
 @if (Model != null)
-{   
-        @*Cada item encontrado de tipo Grupo. Se montarán en una tabla*@
+{
+    @*Cada item encontrado de tipo Grupo. Se montarán en una tabla*@
        <tr>
-           @* Nombre del usuario + Imagen del usuario *@
+            @* Nombre del grupo + Imagen del grupo *@
            <td class="td-nombre">
                 <div class="user-miniatura">
                     <div class="imagen-usuario-wrap">
@@ -27,7 +19,7 @@ Variables
                             <span class="material-icons">groups</span>                                                
                         </div>
                     </div>
-                    @* Contenedor del nombre del usuario *@
+                @* Contenedor del nombre del grupo *@
                     <div class="nombre-usuario-wrap">
                         @if (!string.IsNullOrEmpty(@Model.UrlGroup))
                         {
@@ -42,8 +34,37 @@ Variables
                     </div>
                 </div>
            </td>
-           	@* Tipo de usuario *@
-	        <td class="td-rol">@Html.GetText("DEVTOOLS","GRUPO")</td>
+           	@* Tipo de grupo *@
+	        @* <td class="td-rol">@Html.GetText("DEVTOOLS","GRUPO")</td> *@
+	        <td class="td-rol">
+                <ul class="no-list-style">
+                @{
+                    if (Model.Roles != null)
+                    {
+                        @foreach (string rol in Model.Roles.Take(3))
+                        {
+                            <li>@rol</li>
+                        }
+                        @if (Model.Roles.Count > 3)
+                        {
+                            <li>
+                                <button class="btn" data-toggle="collapse" data-target="#collapse-roles" aria-expanded="false" aria-controls="collapse-roles">
+                                    <span></span>
+                                </button>
+                                <div id="collapse-roles" class="collapse">
+                                    <ul class="no-list-style">
+                                        @foreach (string rol in Model.Roles.Skip(3))
+                                        {
+                                            <li>@rol</li>
+                                        }
+                                    </ul>
+                                </div>
+                            </li>
+                        }
+                    }
+                }
+                </ul>            
+            </td>
 	        @* ¿Recibe boletín? (Sí/No) *@
 	        <td class="td-boletin">-</td>
 	        @* ¿Está expulsado? (Sí/No) *@
@@ -54,9 +75,25 @@ Variables
 	        <td class="td-fecha">                
                 <span>-</span>                
             </td>
-            @* Acciones a realizar sobre el usuario*@
+            @* Acciones a realizar sobre el grupo*@
             <td class="td-acciones">
-                @* Acciones no permitidas para grupos *@           
+                <div id="accionesGrupo_@Model.Clave.ToString()" class="dropdown dropdown-select group acciones noGridView">
+                    <a class="nav-link dropdown-toggle btn btn-outline-grey"
+                       data-toggle="dropdown"
+                       href="#"
+                       role="button"
+                       aria-haspopup="true"
+                       aria-expanded="false">
+                        <span class="material-icons">create</span>
+                        <span class="texto">@Html.GetText("COMMON", "ACCIONES")</span>
+                    </a>
+                    <div class="dropdown-menu basic-dropdown dropdown-icons dropdown-menu-right">
+                        <a class="item-dropdown btnEditarRol" id="grupo_@Model.Clave" data-toggle="modal" data-target="#modal-container" aria-haspopup="true" aria-expanded="true" onclick="operativaGestionMiembros.cambiarRolGrupo('@Model.Clave')">
+                            <span class="material-icons">manage_accounts</span>
+                            <span class="texto">@Html.GetText("USUARIOS", "CAMBIARROLGRUPO")</span>
+                        </a>
+                    </div>
+                </div>
             </td>
        </tr>
 }

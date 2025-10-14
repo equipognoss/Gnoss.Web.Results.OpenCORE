@@ -10,6 +10,7 @@ using Es.Riam.Gnoss.AD.Usuarios;
 using Es.Riam.Gnoss.AD.Virtuoso;
 using Es.Riam.Gnoss.CL;
 using Es.Riam.Gnoss.CL.ParametrosProyecto;
+using Es.Riam.Gnoss.CL.ServiciosGenerales;
 using Es.Riam.Gnoss.Elementos.Identidad;
 using Es.Riam.Gnoss.Logica.Facetado;
 using Es.Riam.Gnoss.Logica.Identidad;
@@ -24,6 +25,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.AspNetCore.Mvc.ViewEngines;
 using Microsoft.AspNetCore.Mvc.ViewFeatures;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -63,13 +65,14 @@ namespace ServicioCargaResultados
         private EntityContextBASE mEntityContextBASE;
         private ICompositeViewEngine mViewEngine;
         private IServicesUtilVirtuosoAndReplication mServicesUtilVirtuosoAndReplication;
-
+        private ILogger mlogger;
+        private ILoggerFactory mLoggerFactory;
         #endregion
 
         #region Constructor
 
-        public CargadorContextoMensajesController(EntityContext entityContext, LoggingService loggingService, RedisCacheWrapper redisCacheWrapper, ConfigService configService, VirtuosoAD virtuosoAD, GnossCache gnossCache, UtilServicios utilServicios, IHttpContextAccessor httpContextAccessor, EntityContextBASE entityContextBASE, ICompositeViewEngine viewEngine, IServicesUtilVirtuosoAndReplication servicesUtilVirtuosoAndReplication):
-            base(loggingService,configService, entityContext, redisCacheWrapper, gnossCache, virtuosoAD, httpContextAccessor, servicesUtilVirtuosoAndReplication)
+        public CargadorContextoMensajesController(EntityContext entityContext, LoggingService loggingService, RedisCacheWrapper redisCacheWrapper, ConfigService configService, VirtuosoAD virtuosoAD, GnossCache gnossCache, UtilServicios utilServicios, IHttpContextAccessor httpContextAccessor, EntityContextBASE entityContextBASE, ICompositeViewEngine viewEngine, IServicesUtilVirtuosoAndReplication servicesUtilVirtuosoAndReplication, ILogger<CargadorContextoMensajesController> logger, ILoggerFactory loggerFactory) :
+            base(loggingService,configService, entityContext, redisCacheWrapper, gnossCache, virtuosoAD, httpContextAccessor, servicesUtilVirtuosoAndReplication,logger,loggerFactory)
         {
             mEntityContext = entityContext;
             mLoggingService = loggingService;
@@ -82,7 +85,9 @@ namespace ServicioCargaResultados
             mEntityContextBASE = entityContextBASE;
             mViewEngine = viewEngine;
             mServicesUtilVirtuosoAndReplication = servicesUtilVirtuosoAndReplication;
-            mCargadorResultadosModel = new CargadorResultadosModel(entityContext, loggingService, redisCacheWrapper, configService, virtuosoAD, mServicesUtilVirtuosoAndReplication);
+            mlogger = logger;
+            mLoggerFactory = loggerFactory;
+            mCargadorResultadosModel = new CargadorResultadosModel(entityContext, loggingService, redisCacheWrapper, configService, virtuosoAD, mServicesUtilVirtuosoAndReplication, mLoggerFactory.CreateLogger<CargadorResultadosModel>(), mLoggerFactory);
         }
 
         #endregion
@@ -167,7 +172,7 @@ namespace ServicioCargaResultados
                         proyectoID = mCargadorResultadosModel.Proyecto.FilaProyecto.ProyectoID;
                     }
 
-                    mUtilIdiomas = new UtilIdiomas(mCargadorResultadosModel.LanguageCode, proyectoID, mCargadorResultadosModel.Proyecto.PersonalizacionID, PersonalizacionEcosistemaID, mLoggingService, mEntityContext, mConfigService, mRedisCacheWrapper);
+                    mUtilIdiomas = new UtilIdiomas(mCargadorResultadosModel.LanguageCode, proyectoID, mCargadorResultadosModel.Proyecto.PersonalizacionID, PersonalizacionEcosistemaID, mLoggingService, mEntityContext, mConfigService, mRedisCacheWrapper, mLoggerFactory.CreateLogger<UtilIdiomas>(), mLoggerFactory);
                     //Establecemos el CultureInfo
                     CultureInfo cultureInfo = Thread.CurrentThread.CurrentCulture;
                     switch (UtilIdiomas.LanguageCode)
@@ -343,23 +348,23 @@ namespace ServicioCargaResultados
             string resultado = "";
             Guid identidadID = new Guid(pIdentidadID);
 
-            IdentidadCN identidadCN = new IdentidadCN(mEntityContext, mLoggingService, mConfigService, mServicesUtilVirtuosoAndReplication);
+            IdentidadCN identidadCN = new IdentidadCN(mEntityContext, mLoggingService, mConfigService, mServicesUtilVirtuosoAndReplication, mLoggerFactory.CreateLogger<IdentidadCN>(), mLoggerFactory);
             DataWrapperIdentidad dataWrapperIdentidad = identidadCN.ObtenerIdentidadPorID(identidadID, true);
             GestionIdentidades gestorIdentidad = new GestionIdentidades(dataWrapperIdentidad, mLoggingService, mEntityContext, mConfigService, mServicesUtilVirtuosoAndReplication);
             Identidad identidadActual = gestorIdentidad.ListaIdentidades[identidadID];
             mCargadorResultadosModel.IdentidadActual = identidadActual;
 
-            UtilIdiomas utilIdiomas = new UtilIdiomas(pLanguageCode, mLoggingService, mEntityContext, mConfigService, mRedisCacheWrapper);
+            UtilIdiomas utilIdiomas = new UtilIdiomas(pLanguageCode, mLoggingService, mEntityContext, mConfigService, mRedisCacheWrapper, mLoggerFactory.CreateLogger<UtilIdiomas>(), mLoggerFactory);
 
             //obtenemos los mensajes relacionados con el mensaje actual
-            FacetadoCN facetadoCN = new FacetadoCN("acidHome_Master", mUtilServicios.UrlIntragnoss, "", "ColaActualizarVirtuosoHome", mEntityContext, mLoggingService, mConfigService, mVirtuosoAD, mServicesUtilVirtuosoAndReplication);
+            FacetadoCN facetadoCN = new FacetadoCN("acidHome_Master", mUtilServicios.UrlIntragnoss, "", "ColaActualizarVirtuosoHome", mEntityContext, mLoggingService, mConfigService, mVirtuosoAD, mServicesUtilVirtuosoAndReplication, mLoggerFactory.CreateLogger<FacetadoCN>(), mLoggerFactory);
             FacetadoDS facetadoDS = facetadoCN.ObtenerMensajesRelacionados(usuarioID, mensajeId, pIdentidadID, 5, identidadActual.NombreCompuesto());
             mCargadorResultadosModel.FacetadoDS = facetadoDS;
             mCargadorResultadosModel.ProyectoSeleccionado = ProyectoAD.MetaProyecto;
 
             if (mCargadorResultadosModel.ListaIdsResultado == null)
             {
-                mCargadorResultadosModel.ListaIdsResultado = new CargadorResultadosModel(mEntityContext, mLoggingService, mRedisCacheWrapper, mConfigService, mVirtuosoAD, mServicesUtilVirtuosoAndReplication).ObtenerListaID(facetadoDS, "MensajesRelacionados", "Mensaje");
+                mCargadorResultadosModel.ListaIdsResultado = new CargadorResultadosModel(mEntityContext, mLoggingService, mRedisCacheWrapper, mConfigService, mVirtuosoAD, mServicesUtilVirtuosoAndReplication, mLoggerFactory.CreateLogger<CargadorResultadosModel>(), mLoggerFactory).ObtenerListaID(facetadoDS, "MensajesRelacionados", "Mensaje");
             }
 
             #region Cargamos los resultados
@@ -369,7 +374,7 @@ namespace ServicioCargaResultados
                 listaRecursosID.Add(new Guid(idResultado));
             }
 
-            ControladorProyectoMVC controladorMVC = new ControladorProyectoMVC(UtilIdiomas, BaseURL, BaseURLsContent, BaseURLStatic, mCargadorResultadosModel.Proyecto, mCargadorResultadosModel.ProyectoOrigenID, mCargadorResultadosModel.FilaParametroGeneral, mCargadorResultadosModel.IdentidadActual, mCargadorResultadosModel.EsBot, mLoggingService, mEntityContext, mConfigService, mHttpContextAccessor, mRedisCacheWrapper, mVirtuosoAD, mGnossCache, mEntityContextBASE, mServicesUtilVirtuosoAndReplication);
+            ControladorProyectoMVC controladorMVC = new ControladorProyectoMVC(UtilIdiomas, BaseURL, BaseURLsContent, BaseURLStatic, mCargadorResultadosModel.Proyecto, mCargadorResultadosModel.ProyectoOrigenID, mCargadorResultadosModel.FilaParametroGeneral, mCargadorResultadosModel.IdentidadActual, mCargadorResultadosModel.EsBot, mLoggingService, mEntityContext, mConfigService, mHttpContextAccessor, mRedisCacheWrapper, mVirtuosoAD, mGnossCache, mEntityContextBASE, mServicesUtilVirtuosoAndReplication, mLoggerFactory.CreateLogger<ControladorProyectoMVC>(), mLoggerFactory);
 
             Dictionary<Guid, MessageModel> listaMensajesModel = controladorMVC.ObtenerMensajesPorID(listaRecursosID, "", mCargadorResultadosModel.IdentidadActual);
 
@@ -404,7 +409,7 @@ namespace ServicioCargaResultados
         {
             CommunityModel comunidad = new CommunityModel();
 
-            VistaVirtualCL vistaVirtualCL = new VistaVirtualCL(mEntityContext, mLoggingService, mGnossCache, mRedisCacheWrapper, mConfigService, mServicesUtilVirtuosoAndReplication);
+            VistaVirtualCL vistaVirtualCL = new VistaVirtualCL(mEntityContext, mLoggingService, mGnossCache, mRedisCacheWrapper, mConfigService, mServicesUtilVirtuosoAndReplication, mLoggerFactory.CreateLogger<VistaVirtualCL>(), mLoggerFactory);
             DataWrapperVistaVirtual vistaVirtualDW = vistaVirtualCL.ObtenerVistasVirtualPorProyectoID(pProyectoID, PersonalizacionEcosistemaID, ComunidadExcluidaPersonalizacionEcosistema);
 
             Guid personalizacionProyecto = Guid.Empty;
@@ -451,7 +456,7 @@ namespace ServicioCargaResultados
 
             if (pProyectoID != ProyectoAD.MetaProyecto)
             {
-                comunidad.Url = new GnossUrlsSemanticas(mLoggingService, mEntityContext, mConfigService, mServicesUtilVirtuosoAndReplication).ObtenerURLComunidad(UtilIdiomas, BaseURLIdioma, mCargadorResultadosModel.Proyecto.NombreCorto);
+                comunidad.Url = new GnossUrlsSemanticas(mLoggingService, mEntityContext, mConfigService, mServicesUtilVirtuosoAndReplication, mLoggerFactory.CreateLogger<GnossUrlsSemanticas>(), mLoggerFactory).ObtenerURLComunidad(UtilIdiomas, BaseURLIdioma, mCargadorResultadosModel.Proyecto.NombreCorto);
             }
             else
             {

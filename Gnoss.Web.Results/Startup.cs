@@ -13,6 +13,8 @@ using Es.Riam.Gnoss.Util.General;
 using Es.Riam.Gnoss.Util.Seguridad;
 using Es.Riam.Gnoss.UtilServiciosWeb;
 using Es.Riam.Gnoss.Web.Controles.ParametroAplicacionGBD;
+using Es.Riam.Interfaces.InterfacesOpen;
+using Es.Riam.Open;
 using Es.Riam.OpenReplication;
 using Es.Riam.Util;
 using Gnoss.Web.Services.VirtualPathProvider;
@@ -95,6 +97,7 @@ namespace Gnoss.Web.Results
             services.AddScoped(typeof(BDVirtualPath));
             services.AddScoped<IServicesUtilVirtuosoAndReplication, ServicesVirtuosoAndBidirectionalReplicationOpen>();
             services.AddScoped(typeof(RelatedVirtuosoCL));
+            services.AddScoped<IAvailableServices, AvailableServicesOpen>();
             string bdType = "";
             IDictionary environmentVariables = Environment.GetEnvironmentVariables();
             if (environmentVariables.Contains("connectionType"))
@@ -111,12 +114,6 @@ namespace Gnoss.Web.Results
                 services.AddScoped(typeof(DbContextOptions<EntityContextBASE>));
             }
             services.AddSingleton(typeof(ConfigService));
-			services.AddSession(options => {
-				options.IdleTimeout = TimeSpan.FromMinutes(60); // Tiempo de expiración   
-																//options.Cookie.Name = "AppTest";
-																//options.Cookie.HttpOnly = true; // correct initialization
-
-			});
 			services.AddMvc();
             string acid = "";
             if (environmentVariables.Contains("acid"))
@@ -139,10 +136,10 @@ namespace Gnoss.Web.Results
             if (bdType.Equals("0"))
             {
                 services.AddDbContext<EntityContext>(options =>
-                        options.UseSqlServer(acid)
+                        options.UseSqlServer(acid, o => o.UseCompatibilityLevel(110))
                         );
                 services.AddDbContext<EntityContextBASE>(options =>
-                        options.UseSqlServer(baseConnection)
+                        options.UseSqlServer(baseConnection, o => o.UseCompatibilityLevel(110))
 
                         );
             }
@@ -177,6 +174,7 @@ namespace Gnoss.Web.Results
 
             var loggingService = sp.GetService<LoggingService>();
             var virtualProvider = sp.GetService<BDVirtualPath>();
+            var redisCacheWrapper = sp.GetService<RedisCacheWrapper>();
             while (!cargado)
             {
                 try
@@ -199,7 +197,6 @@ namespace Gnoss.Web.Results
             // Resolve the services from the service provider
             var configService = sp.GetService<ConfigService>();
 			var servicesUtilVirtuosoAndReplication = sp.GetService<IServicesUtilVirtuosoAndReplication>();
-			var redisCacheWrapper = sp.GetService<RedisCacheWrapper>();
 			configService.ObtenerProcesarStringGrafo();
 
             string configLogStash = configService.ObtenerLogStashConnection();
@@ -216,17 +213,18 @@ namespace Gnoss.Web.Results
             if (!Directory.Exists(rutaVersionCacheLocal)) { Directory.CreateDirectory(rutaVersionCacheLocal); }
             EstablecerDominioCache(entity);
 
-			UtilServicios.CargarIdiomasPlataforma(entity, loggingService, configService, servicesUtilVirtuosoAndReplication, redisCacheWrapper);
+            UtilServicios.CargarIdiomasPlataforma(entity, loggingService, configService, servicesUtilVirtuosoAndReplication, redisCacheWrapper, loggerFactory);
 
-			GnossUrlsSemanticas.IdiomaPrincipalDominio = IdiomaPrincipalDominio;
+            GnossUrlsSemanticas.IdiomaPrincipalDominio = UtilServicios.IDIOMA_PRINCIPAL_DOMINIO;
 
-            CargarTextosPersonalizadosDominio(entity, loggingService, configService, redisCacheWrapper);
+            CargarTextosPersonalizadosDominio(entity, loggingService, configService, redisCacheWrapper, loggerFactory);
 
             CargarConfiguracionFacetado(loggingService, entity, configService);
 
             ConfigurarApplicationInsights(configService);
-			UtilServicios.CargarDominiosPermitidosCORS(entity);
-			services.AddSwaggerGen(c =>
+
+            UtilServicios.CargarDominiosPermitidosCORS(entity);
+            services.AddSwaggerGen(c =>
             {
                 c.SwaggerDoc("v1", new OpenApiInfo { Title = "Gnoss.Web.Results", Version = "v1" });
             });
@@ -279,16 +277,16 @@ namespace Gnoss.Web.Results
             BaseCL.DominioEstatico = dominio;
         }
 
-        private void CargarTextosPersonalizadosDominio(EntityContext context, LoggingService loggingService, ConfigService configService, RedisCacheWrapper redisCacheWrapper)
+        private void CargarTextosPersonalizadosDominio(EntityContext context, LoggingService loggingService, ConfigService configService, RedisCacheWrapper redisCacheWrapper, ILoggerFactory mLoggerFactory)
         {
-            string dominio = "";//mEnvironment.ApplicationName;
+            string dominio = "";
             Guid personalizacionEcosistemaID = Guid.Empty;
             List<ParametroAplicacion> parametrosAplicacionPers = context.ParametroAplicacion.Where(parametroApp => parametroApp.Parametro.Equals(TiposParametrosAplicacion.PersonalizacionEcosistemaID.ToString())).ToList();
             if (parametrosAplicacionPers.Count > 0)
             {
                 personalizacionEcosistemaID = new Guid(parametrosAplicacionPers[0].Valor.ToString());
             }
-            UtilIdiomas utilIdiomas = new UtilIdiomas("", loggingService, context, configService, redisCacheWrapper);
+            UtilIdiomas utilIdiomas = new UtilIdiomas("", loggingService, context, configService, redisCacheWrapper, mLoggerFactory.CreateLogger<UtilIdiomas>(), mLoggerFactory);
             utilIdiomas.CargarTextosPersonalizadosDominio(dominio, personalizacionEcosistemaID);
         }
 

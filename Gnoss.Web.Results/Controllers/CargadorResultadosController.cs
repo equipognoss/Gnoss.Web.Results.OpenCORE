@@ -44,6 +44,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.AspNetCore.Mvc.ViewEngines;
 using Microsoft.AspNetCore.Mvc.ViewFeatures;
+using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
@@ -66,7 +67,7 @@ namespace ServicioCargaResultados
     public class CargadorResultadosController : ControllerBase
     {
 
-        #region Constatnes
+        #region Constantes
 
         /// <summary>
         /// Texto que se devuelve cuando no hay resultados
@@ -117,6 +118,9 @@ namespace ServicioCargaResultados
 
         private CargadorResultadosModel mCargadorResultadosModel;
 
+		private bool mObtenerSoloConsulta = false;
+        private ILogger mlogger;
+        private ILoggerFactory mLoggerFactory;
         #region Variables del buscador facetado
 
         private string mBaseUrl = "";
@@ -149,8 +153,8 @@ namespace ServicioCargaResultados
 
         #region Constructor
 
-        public CargadorResultadosController(EntityContext entityContext, LoggingService loggingService, RedisCacheWrapper redisCacheWrapper, ConfigService configService, VirtuosoAD virtuosoAD, GnossCache gnossCache, UtilServicios utilServicios, IHttpContextAccessor httpContextAccessor, EntityContextBASE entityContextBASE, ICompositeViewEngine viewEngine, UtilServicioResultados utilServicioResultados, UtilServiciosFacetas utilServiciosFacetas, IHostingEnvironment env, IServicesUtilVirtuosoAndReplication servicesUtilVirtuosoAndReplication)
-            : base(loggingService, configService, entityContext, redisCacheWrapper, gnossCache, virtuosoAD, httpContextAccessor, servicesUtilVirtuosoAndReplication)
+        public CargadorResultadosController(EntityContext entityContext, LoggingService loggingService, RedisCacheWrapper redisCacheWrapper, ConfigService configService, VirtuosoAD virtuosoAD, GnossCache gnossCache, UtilServicios utilServicios, IHttpContextAccessor httpContextAccessor, EntityContextBASE entityContextBASE, ICompositeViewEngine viewEngine, UtilServicioResultados utilServicioResultados, UtilServiciosFacetas utilServiciosFacetas, IHostingEnvironment env, IServicesUtilVirtuosoAndReplication servicesUtilVirtuosoAndReplication, ILogger<CargadorResultadosController> logger, ILoggerFactory loggerFactory)
+            : base(loggingService, configService, entityContext, redisCacheWrapper, gnossCache, virtuosoAD, httpContextAccessor, servicesUtilVirtuosoAndReplication,logger,loggerFactory)
         {
             mEntityContext = entityContext;
             mLoggingService = loggingService;
@@ -165,9 +169,11 @@ namespace ServicioCargaResultados
             mUtilServicioResultados = utilServicioResultados;
             mUtilServiciosFacetas = utilServiciosFacetas;
             mEnv = env;
+            mlogger = logger;
+            mLoggerFactory = loggerFactory;
             mServicesUtilVirtuosoAndReplication = servicesUtilVirtuosoAndReplication;
-            mControladorBase = new ControladorBase(loggingService, configService, entityContext, redisCacheWrapper, gnossCache, virtuosoAD, httpContextAccessor, servicesUtilVirtuosoAndReplication);
-            mCargadorResultadosModel = new CargadorResultadosModel(entityContext, loggingService, redisCacheWrapper, configService, virtuosoAD, mServicesUtilVirtuosoAndReplication);
+            mControladorBase = new ControladorBase(loggingService, configService, entityContext, redisCacheWrapper, gnossCache, virtuosoAD, httpContextAccessor, servicesUtilVirtuosoAndReplication, mLoggerFactory.CreateLogger<ControladorBase>(), mLoggerFactory);
+            mCargadorResultadosModel = new CargadorResultadosModel(entityContext, loggingService, redisCacheWrapper, configService, virtuosoAD, mServicesUtilVirtuosoAndReplication, mLoggerFactory.CreateLogger<CargadorResultadosModel>(), mLoggerFactory);
         }
 
         #endregion
@@ -179,7 +185,7 @@ namespace ServicioCargaResultados
         {
             //TODO Javier esta clase esta en Es.Riam.Gnoss.Web.MVC.Controles hay que migrarla
             //MyVirtualPathProvider.listaRutasVirtuales.Clear();
-            VistaVirtualCL vistaVirtualCL = new VistaVirtualCL(mEntityContext, mLoggingService, mGnossCache, mRedisCacheWrapper, mConfigService, mServicesUtilVirtuosoAndReplication);
+            VistaVirtualCL vistaVirtualCL = new VistaVirtualCL(mEntityContext, mLoggingService, mGnossCache, mRedisCacheWrapper, mConfigService, mServicesUtilVirtuosoAndReplication, mLoggerFactory.CreateLogger<VistaVirtualCL>(), mLoggerFactory);
             vistaVirtualCL.InvalidarVistasVirtualesEcosistemaEnCacheLocal();
             return Content("OK");
         }
@@ -245,7 +251,7 @@ namespace ServicioCargaResultados
                     List<Guid> listaID = new List<Guid>();
                     listaID.Add(documentoIDMapa);
 
-                    FacetaCN fac = new FacetaCN(mEntityContext, mLoggingService, mConfigService, mServicesUtilVirtuosoAndReplication);
+                    FacetaCN fac = new FacetaCN(mEntityContext, mLoggingService, mConfigService, mServicesUtilVirtuosoAndReplication, mLoggerFactory.CreateLogger<FacetaCN>(), mLoggerFactory);
                     DataWrapperFacetas facetaDW = new DataWrapperFacetas();
                     fac.CargarFacetaConfigProyMapa(mCargadorResultadosModel.Proyecto.FilaProyecto.OrganizacionID, mCargadorResultadosModel.Proyecto.FilaProyecto.ProyectoID, facetaDW);
                     fac.Dispose();
@@ -259,7 +265,7 @@ namespace ServicioCargaResultados
                         listaPropiedades.Add(latitud);
                         listaPropiedades.Add(longitud);
 
-                        FacetadoCL facetadoCL = new FacetadoCL(mUtilServicios.UrlIntragnoss, mCargadorResultadosModel.AdministradorQuiereVerTodasLasPersonas, pProyectoID.ToString().ToLower(), true, mEntityContext, mLoggingService, mRedisCacheWrapper, mConfigService, mVirtuosoAD, mServicesUtilVirtuosoAndReplication);
+                        FacetadoCL facetadoCL = new FacetadoCL(mUtilServicios.UrlIntragnoss, mCargadorResultadosModel.AdministradorQuiereVerTodasLasPersonas, pProyectoID.ToString().ToLower(), true, mEntityContext, mLoggingService, mRedisCacheWrapper, mConfigService, mVirtuosoAD, mServicesUtilVirtuosoAndReplication, mLoggerFactory.CreateLogger<FacetadoCL>(), mLoggerFactory);
 
                         FacetadoDS facetadoDS = facetadoCL.FacetadoCN.ObtenerValoresPropiedadesEntidadesPorDocumentoID(pProyectoID.ToString(), listaID, listaPropiedades, "", true);
 
@@ -315,17 +321,43 @@ namespace ServicioCargaResultados
 
             return Content(System.Text.Json.JsonSerializer.Serialize(resultado));
         }
-        [HttpGet, HttpPost]
+
+		/// <summary>
+		/// Simula una petición al método de cargar resultados para obtener la consulta SPARQL que se realiza a Virtuoso.
+		/// </summary>
+		/// <returns>IActionResult con la consulta si el usuario identificado es administrador del proyecto. Es necesario decodificarla antes de usarla. (Usar la instrucción System.Text.RegularExpressions.Regex.Unescape()).</returns>
+		[HttpGet, HttpPost]
+        [Route("ObtenerConsulta")]
+        public IActionResult ObtenerConsulta([FromForm] string pProyectoID, [FromForm] string pIdentidadID, [FromForm] bool pEsUsuarioInvitado, [FromForm] string pUrlPaginaBusqueda, [FromForm] bool pUsarMasterParaLectura, [FromForm] bool pAdministradorVeTodasPersonas, [FromForm] short pTipoBusqueda, [FromForm] string pGrafo, [FromForm] string pParametros_adiccionales, [FromForm] string pParametros, [FromForm] bool pPrimeraCarga, [FromForm] string pLanguageCode, [FromForm] int pNumeroParteResultados, [FromForm] string pFiltroContexto, [FromForm] bool? pJson, [FromForm] string tokenAfinidad, [FromForm] string pListaRecursosExcluidos)
+        {
+			ProyectoAD proyAD = new ProyectoAD(mLoggingService, mEntityContext, mConfigService, mServicesUtilVirtuosoAndReplication, mLoggerFactory.CreateLogger<ProyectoAD>(), mLoggerFactory);
+			if (!proyAD.EsIdentidadAdministradorProyecto(new Guid(pIdentidadID), new Guid(pProyectoID), TipoRolUsuario.Administrador)) // Check de seguridad
+			{
+				return new EmptyResult();
+			}
+			mObtenerSoloConsulta = true;
+
+			try
+			{
+				return CargarResultados(pProyectoID, pIdentidadID, pEsUsuarioInvitado, pUrlPaginaBusqueda, pUsarMasterParaLectura, pAdministradorVeTodasPersonas, pTipoBusqueda, pGrafo, pParametros_adiccionales, pParametros, pPrimeraCarga, pLanguageCode, pNumeroParteResultados, pFiltroContexto, pJson, tokenAfinidad, pListaRecursosExcluidos);
+			}
+			catch (Exception e)
+			{
+				mLoggingService.GuardarLogError(e, mlogger);
+				return new EmptyResult();
+			}
+        }
+
+
+	    [HttpGet, HttpPost]
         [Route("CargarResultados")]
         public ActionResult CargarResultados([FromForm] string pProyectoID, [FromForm] string pIdentidadID, [FromForm] bool pEsUsuarioInvitado, [FromForm] string pUrlPaginaBusqueda, [FromForm] bool pUsarMasterParaLectura, [FromForm] bool pAdministradorVeTodasPersonas, [FromForm] short pTipoBusqueda, [FromForm] string pGrafo, [FromForm] string pParametros_adiccionales, [FromForm] string pParametros, [FromForm] bool pPrimeraCarga, [FromForm] string pLanguageCode, [FromForm] int pNumeroParteResultados, [FromForm] string pFiltroContexto, [FromForm] bool? pJson, [FromForm] string tokenAfinidad, [FromForm] string pListaRecursosExcluidos)
         {
             try
             {
-                // mLoggingService.GuardarLog($"ProyectoID: {pProyectoID} |||| pIdentidadID: {pIdentidadID} |||| pEsUsuarioInvitado: {pEsUsuarioInvitado} |||| pUrlPaginaBusqueda: {pUrlPaginaBusqueda}");
-                //mLoggingService.GuardarLogError("Entra a CargarResultados");
                 if (!string.IsNullOrEmpty(tokenAfinidad))
                 {
-                    new SeguridadCL(mEntityContext, mLoggingService, mRedisCacheWrapper, mConfigService, mServicesUtilVirtuosoAndReplication).ObtenerConexionAfinidad(tokenAfinidad.Replace("\"", ""));
+                    new SeguridadCL(mEntityContext, mLoggingService, mRedisCacheWrapper, mConfigService, mServicesUtilVirtuosoAndReplication, mLoggerFactory.CreateLogger<SeguridadCL>(), mLoggerFactory).ObtenerConexionAfinidad(tokenAfinidad.Replace("\"", ""));
                 }
                 if (pFiltroContexto == null) { pFiltroContexto = ""; }
                 if (pParametros_adiccionales == null) { pParametros_adiccionales = ""; }
@@ -409,7 +441,12 @@ namespace ServicioCargaResultados
 
                 bool esMovil = mControladorBase.RequestParams("esMovil") == "true";
 
+                mCargadorResultadosModel.ObtenerSoloConsulta = mObtenerSoloConsulta;
                 TipoResultadoBusqueda tipoResultadoBusqueda = mUtilServicioResultados.CargarResultadosInt(proyectoID, identidadID, identidadID != UsuarioAD.Invitado, pEsUsuarioInvitado, (TipoBusqueda)pTipoBusqueda, pGrafo, pParametros, pParametros_adiccionales, pPrimeraCarga, pLanguageCode, pNumeroParteResultados, mCargadorResultadosModel.FilasPorPagina, TipoFichaResultados.Completa, pFiltroContexto, pAdministradorVeTodasPersonas, mCargadorResultadosModel, esMovil, BusquedaSoloIDs);
+                if (mObtenerSoloConsulta)
+                {
+                    return Json(mCargadorResultadosModel.FacetadoDS.Tables["ConsultasBusqueda"].Rows[0][0].ToString());
+                }
 
                 #endregion
 
@@ -517,7 +554,7 @@ namespace ServicioCargaResultados
                             }
                             else
                             {
-                                ProyectoCL proyCL = new ProyectoCL(mEntityContext, mLoggingService, mRedisCacheWrapper, mConfigService, mVirtuosoAD, mServicesUtilVirtuosoAndReplication);
+                                ProyectoCL proyCL = new ProyectoCL(mEntityContext, mLoggingService, mRedisCacheWrapper, mConfigService, mVirtuosoAD, mServicesUtilVirtuosoAndReplication, mLoggerFactory.CreateLogger<ProyectoCL>(), mLoggerFactory);
                                 urlBaseResultados = proyCL.ObtenerURLPropiaProyecto(proyectoVirtualID, mControladorBase.IdiomaUsuario);
                             }
                         }
@@ -719,12 +756,25 @@ namespace ServicioCargaResultados
                             baseUrlBusqueda = urlBaseResultados + baseUrlBusqueda;
                         }
 
-                        ControladorProyectoMVC controladorMVC = new ControladorProyectoMVC(UtilIdiomas, BaseURL, BaseURLsContent, BaseURLStatic, mCargadorResultadosModel.Proyecto, mCargadorResultadosModel.ProyectoOrigenID, mCargadorResultadosModel.FilaParametroGeneral, mCargadorResultadosModel.IdentidadActual, mCargadorResultadosModel.EsBot, mLoggingService, mEntityContext, mConfigService, mHttpContextAccessor, mRedisCacheWrapper, mVirtuosoAD, mGnossCache, mEntityContextBASE, mServicesUtilVirtuosoAndReplication);
+                        ControladorProyectoMVC controladorMVC = new ControladorProyectoMVC(UtilIdiomas, BaseURL, BaseURLsContent, BaseURLStatic, mCargadorResultadosModel.Proyecto, mCargadorResultadosModel.ProyectoOrigenID, mCargadorResultadosModel.FilaParametroGeneral, mCargadorResultadosModel.IdentidadActual, mCargadorResultadosModel.EsBot, mLoggingService, mEntityContext, mConfigService, mHttpContextAccessor, mRedisCacheWrapper, mVirtuosoAD, mGnossCache, mEntityContextBASE, mServicesUtilVirtuosoAndReplication, mLoggerFactory.CreateLogger<ControladorProyectoMVC>(), mLoggerFactory);
 
                         Dictionary<Guid, CommunityModel> listaComunidadesModel = new Dictionary<Guid, CommunityModel>();
                         if (listaComunidadesID.Count > 0)
                         {
                             listaComunidadesModel = controladorMVC.ObtenerComunidadesPorID(listaComunidadesID, baseUrlBusqueda);
+                            if(pParametros.Contains("gnoss:hasnumerorecursos") && pParametros.Contains("asc"))
+                            {
+                                listaComunidadesModel = listaComunidadesModel.OrderBy(item => item.Value.NumberOfResources).ToDictionary();
+                            }else if(pParametros.Contains("gnoss:hasnumerorecursos") && pParametros.Contains("desc"))
+                            {
+                                listaComunidadesModel = listaComunidadesModel.OrderByDescending(item => item.Value.NumberOfResources).ToDictionary();
+                            }
+
+                            if (pParametros.Contains("gnoss:hasnumerorecursos"))
+                            {
+                                // Ordenar el resultado de la consulta a virtuoso por el orden final
+                                mCargadorResultadosModel.ListaIdsResultado = listaComunidadesModel.Keys.ToDictionary(key => key.ToString().ToUpper(), key => mCargadorResultadosModel.ListaIdsResultado[key.ToString().ToUpper()]);
+                            }
                         }
 
                         Dictionary<Guid, ResourceModel> listaRecursosModel = new Dictionary<Guid, ResourceModel>();
@@ -737,7 +787,7 @@ namespace ServicioCargaResultados
                                 espacioPersonal = EspacioPersonal.Usuario;
                             }
 
-                            listaRecursosModel = controladorMVC.ObtenerRecursosPorID(listaRecursosID, baseUrlBusqueda, espacioPersonal, mCargadorResultadosModel.PestanyaActualID, !mCargadorResultadosModel.SinDatosExtra, true, obtenerDatosExtraIdentidades);
+                            listaRecursosModel = controladorMVC.ObtenerRecursosPorID(listaRecursosID, baseUrlBusqueda, espacioPersonal, mCargadorResultadosModel.PestanyaActualID, !mCargadorResultadosModel.SinDatosExtra, true, obtenerDatosExtraIdentidades,true);
 
                             CargarDatosExtraRecursos(listaRecursosModel);
 
@@ -860,7 +910,7 @@ namespace ServicioCargaResultados
                                     case TiposResultadosMetaBuscador.IdentidadOrganizacion:
                                         if (listaIdentidadesModel.ContainsKey(resultadoID))
                                         {
-                                            ListaResultados.Add(listaIdentidadesModel[resultadoID]);
+											ListaResultados.Add(listaIdentidadesModel[resultadoID]);
                                         }
                                         break;
                                     case TiposResultadosMetaBuscador.Grupo:
@@ -916,8 +966,8 @@ namespace ServicioCargaResultados
                         resultadoModel.UrlBusqueda = mCargadorResultadosModel.UrlNavegador;
                         resultadoModel.ListaResultados = ListaResultados;
                         // Asignar propiedad para saber si la petición se ha realizado desde Administración o no
-                        resultadoModel.AdministradorVeTodasPersonas = pAdministradorVeTodasPersonas;
 
+                        resultadoModel.AdministradorVeTodasPersonas = pAdministradorVeTodasPersonas;
                         //foreach (ObjetoBuscadorModel)
                         //{
                         //    if(UtilIdiomas.LanguageCode)
@@ -943,13 +993,11 @@ namespace ServicioCargaResultados
                                     TypeNameHandling = TypeNameHandling.All
                                 };
                                 string respuesta = JsonConvert.SerializeObject(resultadoModel, jsonSerializerSettings);
-
                                 if (Request.Headers["User-Agent"].ToString().Contains("GnossInternalRequest"))
                                 {
                                     using (MemoryStream input = new MemoryStream())
                                     {
-                                        BinaryFormatter bformatter = new BinaryFormatter();
-                                        bformatter.Serialize(input, resultadoModel);
+                                        System.Text.Json.JsonSerializer.Serialize(input, respuesta);
                                         input.Seek(0, SeekOrigin.Begin);
 
                                         using (MemoryStream output = new MemoryStream())
@@ -967,7 +1015,6 @@ namespace ServicioCargaResultados
                             }
                             else
                             {
-                                //return View("CargarResultados");
                                 string resultado = "";
                                 using (StringWriter sw = new StringWriter())
                                 {
@@ -981,18 +1028,17 @@ namespace ServicioCargaResultados
                                         renderTask.Wait();
                                         if (renderTask.Exception != null)
                                         {
-                                            mLoggingService.GuardarLogError(renderTask.Exception);
+                                            mLoggingService.GuardarLogError(renderTask.Exception, mlogger);
                                         }
                                         resultado = sw.GetStringBuilder().ToString();
                                     }
                                     catch (Exception ex)
                                     {
-                                        mLoggingService.GuardarLogError(ex);
+                                        mLoggingService.GuardarLogError(ex, mlogger);
                                     }
                                 }
-
                                 KeyValuePair<int, string> resultadoPeticion = new KeyValuePair<int, string>(resultadoModel.NumeroResultadosTotal, resultado);
-
+                                
                                 //Devuelvo la respuesta en el response de la petición
                                 return Content(System.Text.Json.JsonSerializer.Serialize(resultadoPeticion));
                             }
@@ -1011,14 +1057,14 @@ namespace ServicioCargaResultados
                                     renderTask.Wait();
                                     if (renderTask.Exception != null)
                                     {
-                                        mLoggingService.GuardarLogError(renderTask.Exception);
+                                        mLoggingService.GuardarLogError(renderTask.Exception, mlogger);
                                     }
 
                                     resultado = sw.GetStringBuilder().ToString();
                                 }
                                 catch (Exception ex)
                                 {
-                                    mLoggingService.GuardarLogError(ex);
+                                    mLoggingService.GuardarLogError(ex, mlogger);
                                 }
                             }
 
@@ -1057,7 +1103,10 @@ namespace ServicioCargaResultados
                     //return resultado;
                 }
             }
-            catch (ThreadAbortException) { }
+            catch (ThreadAbortException) 
+            {
+                //Si se mata el hilo de la ejecución no guardamos logs
+            }
             catch (Exception ex)
             {
                 string url = HttpContext.Request.Path;
@@ -1066,10 +1115,11 @@ namespace ServicioCargaResultados
                     url += "?" + HttpContext.Request.QueryString.ToString();
                 }
 
-                mUtilServicios.EnviarErrorYGuardarLog("Error: " + ex.Message + "\r\nPila: " + ex.StackTrace + "\r\nLlamada: " + url, "errorBots", mCargadorResultadosModel.EsBot);
+                mUtilServicios.EnviarErrorYGuardarLog($"Error: {ex.Message}\r\nPila: {ex.StackTrace}\r\nLlamada: {url}", "errorBots", mCargadorResultadosModel.EsBot);
             }
             return new EmptyResult();
         }
+
         [NonAction]
         private string obtenerTextoBusquedaSinResultados()
         {
@@ -1132,10 +1182,10 @@ namespace ServicioCargaResultados
                 List<Guid> recursosSinCargarPorCompleto = listaRecursosModel.Values.Where(resource => !resource.FullyLoaded).Select(resource => resource.Key).ToList();
                 if (recursosSinCargarPorCompleto.Count > 0)
                 {
-                    DocumentacionCN docCN = new DocumentacionCN(mEntityContext, mLoggingService, mConfigService, mServicesUtilVirtuosoAndReplication);
-                    GestorDocumental gestorDocumental = new GestorDocumental(docCN.ObtenerDocumentosPorID(recursosSinCargarPorCompleto), mLoggingService, mEntityContext);
+                    DocumentacionCN docCN = new DocumentacionCN(mEntityContext, mLoggingService, mConfigService, mServicesUtilVirtuosoAndReplication, mLoggerFactory.CreateLogger<DocumentacionCN>(), mLoggerFactory);
+                    GestorDocumental gestorDocumental = new GestorDocumental(docCN.ObtenerDocumentosPorID(recursosSinCargarPorCompleto), mLoggingService, mEntityContext, mLoggerFactory.CreateLogger<GestorDocumental>(), mLoggerFactory);
 
-                    ControladorDocumentoMVC controladorDocumentoMVC = new ControladorDocumentoMVC(mLoggingService, mConfigService, mEntityContext, mRedisCacheWrapper, mGnossCache, mVirtuosoAD, mHttpContextAccessor, mServicesUtilVirtuosoAndReplication);
+                    ControladorDocumentoMVC controladorDocumentoMVC = new ControladorDocumentoMVC(mLoggingService, mConfigService, mEntityContext, mRedisCacheWrapper, mGnossCache, mVirtuosoAD, mHttpContextAccessor, mServicesUtilVirtuosoAndReplication, mLoggerFactory.CreateLogger<ControladorDocumentoMVC>(), mLoggerFactory);
 
                     foreach (Guid documentoID in recursosSinCargarPorCompleto)
                     {
@@ -1147,11 +1197,11 @@ namespace ServicioCargaResultados
                 }
             }
 
-            ProyectoCL proyectoCL = new ProyectoCL(mEntityContext, mLoggingService, mRedisCacheWrapper, mConfigService, mVirtuosoAD, mServicesUtilVirtuosoAndReplication);
+            ProyectoCL proyectoCL = new ProyectoCL(mEntityContext, mLoggingService, mRedisCacheWrapper, mConfigService, mVirtuosoAD, mServicesUtilVirtuosoAndReplication, mLoggerFactory.CreateLogger<ProyectoCL>(), mLoggerFactory);
             mCargadorResultadosModel.Proyecto.GestorProyectos.DataWrapperProyectos.ListaNivelCertificacion = mCargadorResultadosModel.Proyecto.GestorProyectos.DataWrapperProyectos.ListaNivelCertificacion.Union(proyectoCL.ObtenerNivelesCertificacionRecursosProyecto(mCargadorResultadosModel.ProyectoSeleccionado).ListaNivelCertificacion).ToList();
             if (mCargadorResultadosModel.Proyecto.GestorProyectos.DataWrapperProyectos.ListaNivelCertificacion.Count > 0)
             {
-                DocumentacionCN docCN = new DocumentacionCN(mEntityContext, mLoggingService, mConfigService, mServicesUtilVirtuosoAndReplication);
+                DocumentacionCN docCN = new DocumentacionCN(mEntityContext, mLoggingService, mConfigService, mServicesUtilVirtuosoAndReplication, mLoggerFactory.CreateLogger<DocumentacionCN>(), mLoggerFactory);
 
                 List<Guid> recursosSinCargarPorCompleto = listaRecursosModel.Values.Select(resource => resource.Key).ToList();
                 Dictionary<Guid, Dictionary<Guid, string>> ListaNivelesCertificacion = docCN.ObtenerNivelCertificacionDeDocumentos(recursosSinCargarPorCompleto, mCargadorResultadosModel.ProyectoSeleccionado);
@@ -1292,7 +1342,7 @@ namespace ServicioCargaResultados
                 {
                     baseUrlBusqueda = baseUrlBusqueda.Substring(0, baseUrlBusqueda.IndexOf("?"));
                 }
-                ControladorProyectoMVC controladorMVC = new ControladorProyectoMVC(UtilIdiomas, BaseURL, BaseURLsContent, BaseURLStatic, mCargadorResultadosModel.Proyecto, mCargadorResultadosModel.ProyectoOrigenID, mCargadorResultadosModel.FilaParametroGeneral, mCargadorResultadosModel.IdentidadActual, mCargadorResultadosModel.EsBot, mLoggingService, mEntityContext, mConfigService, mHttpContextAccessor, mRedisCacheWrapper, mVirtuosoAD, mGnossCache, mEntityContextBASE, mServicesUtilVirtuosoAndReplication);
+                ControladorProyectoMVC controladorMVC = new ControladorProyectoMVC(UtilIdiomas, BaseURL, BaseURLsContent, BaseURLStatic, mCargadorResultadosModel.Proyecto, mCargadorResultadosModel.ProyectoOrigenID, mCargadorResultadosModel.FilaParametroGeneral, mCargadorResultadosModel.IdentidadActual, mCargadorResultadosModel.EsBot, mLoggingService, mEntityContext, mConfigService, mHttpContextAccessor, mRedisCacheWrapper, mVirtuosoAD, mGnossCache, mEntityContextBASE, mServicesUtilVirtuosoAndReplication, mLoggerFactory.CreateLogger<ControladorProyectoMVC>(), mLoggerFactory);
 
                 #region Recursos
                 Dictionary<Guid, ResourceModel> listaResultados = controladorMVC.ObtenerRecursosPorID(listaRecursos, baseUrlBusqueda, null, true);
@@ -1442,7 +1492,7 @@ namespace ServicioCargaResultados
                 {
                     baseUrlBusqueda = baseUrlBusqueda.Substring(0, baseUrlBusqueda.IndexOf("?"));
                 }
-                ControladorProyectoMVC controladorMVC = new ControladorProyectoMVC(UtilIdiomas, BaseURL, BaseURLsContent, BaseURLStatic, mCargadorResultadosModel.Proyecto, mCargadorResultadosModel.ProyectoOrigenID, mCargadorResultadosModel.FilaParametroGeneral, mCargadorResultadosModel.IdentidadActual, mCargadorResultadosModel.EsBot, mLoggingService, mEntityContext, mConfigService, mHttpContextAccessor, mRedisCacheWrapper, mVirtuosoAD, mGnossCache, mEntityContextBASE, mServicesUtilVirtuosoAndReplication);
+                ControladorProyectoMVC controladorMVC = new ControladorProyectoMVC(UtilIdiomas, BaseURL, BaseURLsContent, BaseURLStatic, mCargadorResultadosModel.Proyecto, mCargadorResultadosModel.ProyectoOrigenID, mCargadorResultadosModel.FilaParametroGeneral, mCargadorResultadosModel.IdentidadActual, mCargadorResultadosModel.EsBot, mLoggingService, mEntityContext, mConfigService, mHttpContextAccessor, mRedisCacheWrapper, mVirtuosoAD, mGnossCache, mEntityContextBASE, mServicesUtilVirtuosoAndReplication, mLoggerFactory.CreateLogger<ControladorProyectoMVC>(), mLoggerFactory);
 
                 Dictionary<Guid, ResourceModel> listaRecursosModel = controladorMVC.ObtenerRecursosPorID(listaRecursosID, baseUrlBusqueda, null, true, pObtenerIdentidades, pObtenerDatosExtraIdentidades);
                 UtilServicioResultados.ProcesarFichasRecursoParaPresentacion(listaRecursosModel);
@@ -1567,7 +1617,7 @@ namespace ServicioCargaResultados
 
                 mCargadorResultadosModel.TConfiguracionOntologia = tConfiguracionOntologia;
 
-                mCargadorResultadosModel.FacetadoCL = new FacetadoCL(mUtilServicios.UrlIntragnoss, mCargadorResultadosModel.AdministradorQuiereVerTodasLasPersonas, mCargadorResultadosModel.ProyectoSeleccionado.ToString().ToLower(), true, mEntityContext, mLoggingService, mRedisCacheWrapper, mConfigService, mVirtuosoAD, mServicesUtilVirtuosoAndReplication);
+                mCargadorResultadosModel.FacetadoCL = new FacetadoCL(mUtilServicios.UrlIntragnoss, mCargadorResultadosModel.AdministradorQuiereVerTodasLasPersonas, mCargadorResultadosModel.ProyectoSeleccionado.ToString().ToLower(), true, mEntityContext, mLoggingService, mRedisCacheWrapper, mConfigService, mVirtuosoAD, mServicesUtilVirtuosoAndReplication, mLoggerFactory.CreateLogger<FacetadoCL>(), mLoggerFactory);
                 mCargadorResultadosModel.FacetadoCL.InformacionOntologias = mCargadorResultadosModel.InformacionOntologias;
                 mCargadorResultadosModel.FacetadoDS = new FacetadoDS();
 
@@ -1639,7 +1689,7 @@ namespace ServicioCargaResultados
                     listaRecursosID.Add(new Guid(idResultado));
                 }
 
-                ControladorProyectoMVC controladorMVC = new ControladorProyectoMVC(UtilIdiomas, BaseURL, BaseURLsContent, BaseURLStatic, mCargadorResultadosModel.Proyecto, mCargadorResultadosModel.ProyectoOrigenID, mCargadorResultadosModel.FilaParametroGeneral, mCargadorResultadosModel.IdentidadActual, mCargadorResultadosModel.EsBot, mLoggingService, mEntityContext, mConfigService, mHttpContextAccessor, mRedisCacheWrapper, mVirtuosoAD, mGnossCache, mEntityContextBASE, mServicesUtilVirtuosoAndReplication);
+                ControladorProyectoMVC controladorMVC = new ControladorProyectoMVC(UtilIdiomas, BaseURL, BaseURLsContent, BaseURLStatic, mCargadorResultadosModel.Proyecto, mCargadorResultadosModel.ProyectoOrigenID, mCargadorResultadosModel.FilaParametroGeneral, mCargadorResultadosModel.IdentidadActual, mCargadorResultadosModel.EsBot, mLoggingService, mEntityContext, mConfigService, mHttpContextAccessor, mRedisCacheWrapper, mVirtuosoAD, mGnossCache, mEntityContextBASE, mServicesUtilVirtuosoAndReplication, mLoggerFactory.CreateLogger<ControladorProyectoMVC>(), mLoggerFactory);
 
                 Dictionary<Guid, ResourceModel> listaRecursosModel = controladorMVC.ObtenerRecursosPorID(listaRecursosID, "", null, true, pObtenerIdentidades, pObtenerDatosExtraIdentidades);
                 UtilServicioResultados.ProcesarFichasRecursoParaPresentacion(listaRecursosModel);
@@ -1814,7 +1864,7 @@ namespace ServicioCargaResultados
         {
             try
             {
-                mLoggingService.GuardarLogError($"Entra a ObtenerFichaRecurso: \n proyecto -> {proyecto}, \n identidad -> {identidad}, \n languageCode -> {languageCode}, \n documentoID -> {documentoID}, \n urlBusqueda -> {urlBusqueda}, \n pPersonaID -> {pPersonaID.ToString()}");
+                mLoggingService.GuardarLogError($"Entra a ObtenerFichaRecurso: \n proyecto -> {proyecto}, \n identidad -> {identidad}, \n languageCode -> {languageCode}, \n documentoID -> {documentoID}, \n urlBusqueda -> {urlBusqueda}, \n pPersonaID -> {pPersonaID.ToString()}", mlogger);
                 proyecto = proyecto.Replace("\"", "");
                 mCargadorResultadosModel.ProyectoSeleccionado = new Guid(proyecto);
                 mCargadorResultadosModel.LanguageCode = languageCode.Replace("\"", "");
@@ -1847,7 +1897,7 @@ namespace ServicioCargaResultados
                     CargarIdentidad(new Guid(identidad));
                 }
 
-                ControladorProyectoMVC controladorMVC = new ControladorProyectoMVC(UtilIdiomas, BaseURL, BaseURLsContent, BaseURLStatic, mCargadorResultadosModel.Proyecto, mCargadorResultadosModel.ProyectoOrigenID, mCargadorResultadosModel.FilaParametroGeneral, mCargadorResultadosModel.IdentidadActual, mCargadorResultadosModel.EsBot, mLoggingService, mEntityContext, mConfigService, mHttpContextAccessor, mRedisCacheWrapper, mVirtuosoAD, mGnossCache, mEntityContextBASE, mServicesUtilVirtuosoAndReplication);
+                ControladorProyectoMVC controladorMVC = new ControladorProyectoMVC(UtilIdiomas, BaseURL, BaseURLsContent, BaseURLStatic, mCargadorResultadosModel.Proyecto, mCargadorResultadosModel.ProyectoOrigenID, mCargadorResultadosModel.FilaParametroGeneral, mCargadorResultadosModel.IdentidadActual, mCargadorResultadosModel.EsBot, mLoggingService, mEntityContext, mConfigService, mHttpContextAccessor, mRedisCacheWrapper, mVirtuosoAD, mGnossCache, mEntityContextBASE, mServicesUtilVirtuosoAndReplication, mLoggerFactory.CreateLogger<ControladorProyectoMVC>(), mLoggerFactory);
                 Dictionary<Guid, ResourceModel> listaRecursosModel = new Dictionary<Guid, ResourceModel>();
                 List<Guid> listaRecursosID = new List<Guid>();
 
@@ -1861,7 +1911,7 @@ namespace ServicioCargaResultados
                     return new EmptyResult();
                 }
 
-                mCargadorResultadosModel.FacetadoCL = new FacetadoCL(mUtilServicios.UrlIntragnoss, mCargadorResultadosModel.AdministradorQuiereVerTodasLasPersonas, mCargadorResultadosModel.GrafoID, true, mEntityContext, mLoggingService, mRedisCacheWrapper, mConfigService, mVirtuosoAD, mServicesUtilVirtuosoAndReplication);
+                mCargadorResultadosModel.FacetadoCL = new FacetadoCL(mUtilServicios.UrlIntragnoss, mCargadorResultadosModel.AdministradorQuiereVerTodasLasPersonas, mCargadorResultadosModel.GrafoID, true, mEntityContext, mLoggingService, mRedisCacheWrapper, mConfigService, mVirtuosoAD, mServicesUtilVirtuosoAndReplication, mLoggerFactory.CreateLogger<FacetadoCL>(), mLoggerFactory);
 
                 if (mCargadorResultadosModel.ProyectoSeleccionado != ProyectoAD.MetaProyecto)
                 {
@@ -2020,7 +2070,7 @@ namespace ServicioCargaResultados
 
             if (pProyectoID != ProyectoAD.MetaProyecto)
             {
-                comunidad.Url = new GnossUrlsSemanticas(mLoggingService, mEntityContext, mConfigService, mServicesUtilVirtuosoAndReplication).ObtenerURLComunidad(UtilIdiomas, BaseURLIdioma, mCargadorResultadosModel.Proyecto.NombreCorto);
+                comunidad.Url = new GnossUrlsSemanticas(mLoggingService, mEntityContext, mConfigService, mServicesUtilVirtuosoAndReplication, mLoggerFactory.CreateLogger<GnossUrlsSemanticas>(), mLoggerFactory).ObtenerURLComunidad(UtilIdiomas, BaseURLIdioma, mCargadorResultadosModel.Proyecto.NombreCorto);
             }
             else
             {
@@ -2056,6 +2106,15 @@ namespace ServicioCargaResultados
             {
                 identidad.KeyUser = mCargadorResultadosModel.IdentidadActual.Persona.UsuarioID;
                 identidad.IsProyectAdmin = mCargadorResultadosModel.Proyecto.EsAdministradorUsuario(mCargadorResultadosModel.IdentidadActual.Persona.UsuarioID);
+				UtilPermisos utilPermisos = new UtilPermisos(mEntityContext, mLoggingService, mConfigService, mLoggerFactory.CreateLogger<UtilPermisos>(), mLoggerFactory);
+				if (pProyectoID != ProyectoAD.MetaProyecto)
+                {
+                    identidad.CanManageUsers = identidad.CanManageUsers = utilPermisos.IdentidadTienePermiso((ulong)PermisoComunidad.GestionarMiembros, identidad.KeyIdentity, identidad.KeyIdentity, TipoDePermiso.Comunidad);
+				}
+                else
+                {
+                    identidad.CanManageUsers = utilPermisos.UsuarioTienePermisoAdministracionEcosistema((ulong)PermisoEcosistema.AdministrarMiembrosEcosistema, mCargadorResultadosModel.IdentidadActual.Persona.UsuarioID);
+				}
             }
 
             identidad.KeyProfile = mCargadorResultadosModel.IdentidadActual.PerfilID;
@@ -2063,11 +2122,11 @@ namespace ServicioCargaResultados
 
             ViewBag.IdentidadActual = identidad;
 
-            ProyectoCN proyCN = new ProyectoCN(mEntityContext, mLoggingService, mConfigService, mServicesUtilVirtuosoAndReplication);
+            ProyectoCN proyCN = new ProyectoCN(mEntityContext, mLoggingService, mConfigService, mServicesUtilVirtuosoAndReplication, mLoggerFactory.CreateLogger<ProyectoCN>(), mLoggerFactory);
             // las personalizaciones no se cargan en la página de administración de miembros
             if (!mCargadorResultadosModel.AdministradorQuiereVerTodasLasPersonas || !mCargadorResultadosModel.TipoBusqueda.Equals(TipoBusqueda.PersonasYOrganizaciones) || !proyCN.EsIdentidadAdministradorProyecto(mCargadorResultadosModel.IdentidadID, pProyectoID, TipoRolUsuario.Administrador))
             {
-                VistaVirtualCL vistaVirtualCL = new VistaVirtualCL(mEntityContext, mLoggingService, mGnossCache, mRedisCacheWrapper, mConfigService, mServicesUtilVirtuosoAndReplication);
+                VistaVirtualCL vistaVirtualCL = new VistaVirtualCL(mEntityContext, mLoggingService, mGnossCache, mRedisCacheWrapper, mConfigService, mServicesUtilVirtuosoAndReplication, mLoggerFactory.CreateLogger<VistaVirtualCL>(), mLoggerFactory);
                 DataWrapperVistaVirtual vistaVirtualDW = vistaVirtualCL.ObtenerVistasVirtualPorProyectoID(pProyectoID, PersonalizacionEcosistemaID, ComunidadExcluidaPersonalizacionEcosistema);
 
                 Guid personalizacionProyecto = Guid.Empty;
@@ -2120,10 +2179,10 @@ namespace ServicioCargaResultados
         {
             List<CategoryModel> listaCategoriasTesauro = new List<CategoryModel>();
 
-            TesauroCL tesauroCL = new TesauroCL(mEntityContext, mLoggingService, mRedisCacheWrapper, mConfigService, mServicesUtilVirtuosoAndReplication);
+            TesauroCL tesauroCL = new TesauroCL(mEntityContext, mLoggingService, mRedisCacheWrapper, mConfigService, mServicesUtilVirtuosoAndReplication, mLoggerFactory.CreateLogger<TesauroCL>(), mLoggerFactory);
             DataWrapperTesauro tesauroDW = tesauroCL.ObtenerTesauroDeProyecto(mCargadorResultadosModel.ProyectoSeleccionado);
 
-            GestionTesauro gestorTesauro = new GestionTesauro(tesauroDW, mLoggingService, mEntityContext);
+            GestionTesauro gestorTesauro = new GestionTesauro(tesauroDW, mLoggingService, mEntityContext, mLoggerFactory.CreateLogger<GestionTesauro>(), mLoggerFactory);
 
             foreach (CategoriaTesauro catTes in gestorTesauro.ListaCategoriasTesauro.Values)
             {
@@ -2496,7 +2555,7 @@ namespace ServicioCargaResultados
                         proyectoID = mCargadorResultadosModel.Proyecto.FilaProyecto.ProyectoID;
                     }
 
-                    mUtilIdiomas = new UtilIdiomas(mCargadorResultadosModel.LanguageCode, proyectoID, mCargadorResultadosModel.Proyecto.PersonalizacionID, mControladorBase.PersonalizacionEcosistemaID, mLoggingService, mEntityContext, mConfigService, mRedisCacheWrapper);
+                    mUtilIdiomas = new UtilIdiomas(mCargadorResultadosModel.LanguageCode, proyectoID, mCargadorResultadosModel.Proyecto.PersonalizacionID, mControladorBase.PersonalizacionEcosistemaID, mLoggingService, mEntityContext, mConfigService, mRedisCacheWrapper, mLoggerFactory.CreateLogger<UtilIdiomas>(), mLoggerFactory);
                     //Establecemos el CultureInfo
                     CultureInfo cultureInfo = System.Threading.Thread.CurrentThread.CurrentCulture;
                     switch (UtilIdiomas.LanguageCode)
@@ -2546,15 +2605,20 @@ namespace ServicioCargaResultados
         {
             get
             {
+                string rutaEjecucionWeb = "";
+                if (!string.IsNullOrEmpty(mConfigService.ObtenerRutaEjecucionWeb()))
+                {
+                    rutaEjecucionWeb = $"/{mConfigService.ObtenerRutaEjecucionWeb().TrimEnd('/')}";
+                }
                 if (Request.Headers.ContainsKey("Referer"))
                 {
                     string http = Request.Headers["Referer"].ToString().Substring(0, Request.Headers["Referer"].ToString().IndexOf("/") + 2);
                     string url = Request.Headers["Referer"].ToString().Substring(http.Length);
-                    mBaseUrl = http + url.Substring(0, url.IndexOf("/")); ;
+                    mBaseUrl = $"{http}{url.Substring(0, url.IndexOf("/"))}{rutaEjecucionWeb}";
                 }
                 else if (mCargadorResultadosModel.Proyecto != null && mCargadorResultadosModel.Proyecto.FilaProyecto.URLPropia != null)
                 {
-                    mBaseUrl = mCargadorResultadosModel.Proyecto.UrlPropia(mControladorBase.IdiomaUsuario);
+                    mBaseUrl = $"{mCargadorResultadosModel.Proyecto.UrlPropia(mControladorBase.IdiomaUsuario)}{rutaEjecucionWeb}";
                 }
 
                 if (mBaseUrl == null || mBaseUrl == "")

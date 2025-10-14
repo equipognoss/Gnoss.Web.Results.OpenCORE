@@ -11,33 +11,46 @@ Variables
 ----------------------------------------------------------------
 *@
 @{
-// Cadena de texto para un recurso de tipo "Privado". Utilizarlo para HTML
-string privado = "";
-// Texto para añadir a modo de clase extra al contenido o descripción del Recurso
-string claseExtraDescripcion = "";
-//string fechaRecurso = Model.PublishDate.ToString("dddd, MMMM. yyyy");
-string fechaRecurso = Model.PublishDate.ToString("dd/MM/yyyy");
-// Publicador del recurso
-ProfileModel publicador = Model.Publisher;
-// Nombre que se mostrará para "Seguir" dependiendod el tipo de "Publicador"
-String nombrePublicador = "";
-Boolean permitirFollow = false;
+    // Texto para añadir a modo de clase extra al contenido o descripción del Recurso
+    string claseExtraDescripcion = "";
+    //string fechaRecurso = Model.PublishDate.ToString("dddd, MMMM. yyyy");
+    string fechaRecurso = Model.PublishDate.ToString("dd/MM/yyyy");
+    // Publicador del recurso
+    ProfileModel publicador = Model.Publisher;
+    // Nombre que se mostrará para "Seguir" dependiendod el tipo de "Publicador"
+    String nombrePublicador = "";
+    Boolean permitirFollow = false;
+    
+    string ocultoListado = "";
+    string ocultoMosaico = "";
+    string ocultoMapa = "";
 
-UserIdentityModel IdentidadActual = Html.GetIdentidadActual();
+    if (Model.ViewSettings != null)
+    {
+        ocultoListado = Model.ViewSettings.VistaDefecto.Equals(TipoVista.Lista) ? "" : "hidden";
+        ocultoMosaico = Model.ViewSettings.VistaDefecto.Equals(TipoVista.Mosaico) ? "" : "hidden";
+        ocultoMapa = Model.ViewSettings.VistaDefecto.Equals(TipoVista.Mapa) ? "" : "hidden";
+    }
+    else{
+        ocultoMosaico = "hidden";
+        ocultoMapa = "hidden";
+    }
 
-// Funciones para seguir o no seguir a un publicador
-string funcion_seguir = "";
-// Icono seguir-no seguir 
-string icono_seguir = "";
-// Título del botón para seguir o no seguir
-string titulo_seguir = "";
+    UserIdentityModel IdentidadActual = Html.GetIdentidadActual();
 
-// Nombre adicional para el tipo de recurso y ser usado a modo de clase
-string claseTipoRecurso = Html.ObtenerNombreClasePorTipoRecurso(Model.TypeDocument);
-// Data-Attribute que indicará si se está siguiendo al Publisher del recurso
-string dataAttributeFollowing = "";
-// Contador de categorias y labels
-int cont = 0;
+    // Funciones para seguir o no seguir a un publicador
+    string funcion_seguir = "";
+    // Icono seguir-no seguir 
+    string icono_seguir = "";
+    // Título del botón para seguir o no seguir
+    string titulo_seguir = "";
+    
+    // Nombre adicional para el tipo de recurso y ser usado a modo de clase
+    string claseTipoRecurso = Html.ObtenerNombreClasePorTipoRecurso(Model.TypeDocument);
+    // Data-Attribute que indicará si se está siguiendo al Publisher del recurso
+    string dataAttributeFollowing = "";
+    // Contador de categorias y labels
+    int cont = 0;
 }
 
 @*
@@ -45,13 +58,7 @@ int cont = 0;
 -------------------- Lista donde se mostrarán los los items o recursos del buscador --------------------
 *@
 
-@{
-    @* Controlar el tipo de recurso (Privado?)*@
-    if (Model.Private)
-    {
-        privado = " privado";
-    }
-
+@{    
     @* Obtener el nombre, organizacion o información del publicador para poder seguir *@
     switch(publicador.TypeProfile) 
     {
@@ -90,7 +97,7 @@ int cont = 0;
     if (!IdentidadActual.IsGuestUser && IdentidadActual.KeyPerson != publicador.KeyPerson) {
         permitirFollow = true;
         @* Comprobar si se puede seguir o no seguir *@
-    if (publicador.Actions.FollowingProfile) {
+    if (publicador.Actions != null && publicador.Actions.FollowingProfile) {
         //funcion_seguir = "AccionPerfil_NoSeguir(this, '" + publicador.ListActions.UrlUnfollow + "')";
         funcion_seguir = "AccionPerfil_Seguir_Listado(this, '" + publicador.ListActions.UrlUnfollow + "','" + publisherNameActionFollowUnFollow + "')";
         icono_seguir = "person_remove_alt_1";
@@ -124,7 +131,7 @@ int cont = 0;
         @* Permitir checkbox en el título del Recurso (Mantenida funcionalidad para nuevo Front) *@
         @if (Model.SelectionCheckAvailable)
         {
-            string idCheck = "ficha_" + Model.Key;
+                string idCheck = "ficha_" + Model.Key;
 
             <div class="check-wrapper">
                 @* Checkbox que permitirá seleccionar/deseleccionar *@
@@ -140,7 +147,7 @@ int cont = 0;
             <div class="title-wrap">
                 @* Título del recurso + Link*@
                 <h2 class="resource-title">
-                    <a href="@Model.CompletCardLink">@Model.Title</a>
+                        <a href="@Model.CompleteOriginalCardLink">@Model.Title</a>
                 </h2>
             </div>
 
@@ -182,7 +189,7 @@ int cont = 0;
                 {
                     <div class="image-wrap">
                         <div class="image">
-                            <a href="@Model.CompletCardLink">
+                            <a href="@Model.CompleteOriginalCardLink">
                                 <img alt="@Model.Title" title="@Model.Title"
                                      src="@Model.UrlPreview" />
                             </a>
@@ -193,15 +200,15 @@ int cont = 0;
                 <div class="description-wrap">
                     @* Clase adicional al contenido o descripción del artículo (Mantenida función para nuevo Front) *@
                     @{
-                        if ((Model.ViewSettings != null && ((!Model.MapView && (Model.ViewSettings.DescriptionOnList || Model.ViewSettings.DescriptionOnMosaic)) || (Model.MapView && Model.ViewSettings.DescriptionOnMap))))
+                        if ((Model.ViewSettings != null && ((!Model.MapView && (Model.ViewSettings.ListView.ShowDescription || Model.ViewSettings.MosaicView.ShowDescription)) || (Model.MapView && Model.ViewSettings.MapView.ShowDescription))))
                         {
                             if (Model.ViewSettings != null)
                             {
-                                if (!Model.ViewSettings.DescriptionOnList)
+                                if (!Model.ViewSettings.ListView.ShowDescription)
                                 {
                                     claseExtraDescripcion += " noListView";
                                 }
-                                if (!Model.ViewSettings.DescriptionOnMosaic)
+                                if (!Model.ViewSettings.MosaicView.ShowDescription)
                                 {
                                     claseExtraDescripcion += " noGridView";
                                 }
@@ -211,7 +218,7 @@ int cont = 0;
                     @* Descripción del contenido del artículo *@
                     <div class="desc @claseExtraDescripcion text-justify descripcionResumida">
                         @* Contenido o descripción preliminar del Recurso *@
-                        @if ((Model.ViewSettings == null) || (!Model.MapView && (Model.ViewSettings.DescriptionOnList || Model.ViewSettings.DescriptionOnMosaic)) || (Model.MapView && Model.ViewSettings.DescriptionOnMap))
+                        @if ((Model.ViewSettings == null) || (!Model.MapView && (Model.ViewSettings.ListView.ShowDescription || Model.ViewSettings.MosaicView.ShowDescription)) || (Model.MapView && Model.ViewSettings.MapView.ShowDescription))
                         {
                             // Descripción del recurso
                             if (!string.IsNullOrEmpty(Model.Description))                            
@@ -241,24 +248,24 @@ int cont = 0;
 
             @* Opciones de visualización aplicando clase al div (Funcionalidad mantenida para el nuevo Front). *@
             @if (Model.ViewSettings != null)
-            {                
+            {
                 <div class="content-properties">
-                    @if (!Model.MapView && !string.IsNullOrEmpty(Model.ViewSettings.InfoExtraList))
+                    @if (!Model.MapView)
                     {
-                        <div class="listado">
-                            @Html.Raw(Model.ViewSettings.InfoExtraList)
+                            <div class="listado @(ocultoListado)">
+                            @Html.Raw(Model.ViewSettings.ListView.InfoExtra)
                         </div>
                     }
-                    @if (!Model.MapView && !string.IsNullOrEmpty(Model.ViewSettings.InfoExtraMosaic))
+                    @if (!Model.MapView)
                     {
-                        <div class="mosaico">
-                            @Html.Raw(Model.ViewSettings.InfoExtraMosaic)
+                            <div class="mosaico @(ocultoMosaico)">
+                            @Html.Raw(Model.ViewSettings.MosaicView.InfoExtra)
                         </div>
                     }
-                    @if (Model.MapView && !string.IsNullOrEmpty(Model.ViewSettings.InfoExtraMap))
+                    @if (Model.MapView && !string.IsNullOrEmpty(Model.ViewSettings.MapView.InfoExtra))
                     {
-                        <div class="mapa">
-                            @Html.Raw(Model.ViewSettings.InfoExtraMap)
+                            <div class="mapa @(ocultoMapa)">
+                            @Html.Raw(Model.ViewSettings.MapView.InfoExtra)
                         </div>
                     }
                 </div>
@@ -330,7 +337,7 @@ int cont = 0;
                 @* Acción de seguir al usuario *@
                 @if (permitirFollow)
                 {
-                    <div class="seguir-usuario followAction_@publisherNameActionFollowUnFollow" @(publicador.Actions.FollowingProfile ? @dataAttributeFollowing : null)>
+                    <div class="seguir-usuario followAction_@publisherNameActionFollowUnFollow" @((publicador.Actions != null && publicador.Actions.FollowingProfile) ? @dataAttributeFollowing : null)>
                         <span class="material-icons icon">@icono_seguir</span>
                         <span class="texto" onclick="@funcion_seguir">@titulo_seguir</span>
                     </div>

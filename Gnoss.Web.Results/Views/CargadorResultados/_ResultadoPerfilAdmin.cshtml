@@ -19,7 +19,6 @@ string tipoPerfil = "";
 UserIdentityModel IdentidadActual = Html.GetIdentidadActual();
 // Controlar si dispone o no de fotografía el usuario
 bool containsUrlFoto = true;
-
 }
 
 @*
@@ -123,11 +122,35 @@ bool containsUrlFoto = true;
 			        </div>
 		        </div>
            </td>
-           	@* Tipo de usuario *@
+           	@* Roles del usuario *@
 	        <td id="rol_@Model.Key" class="td-rol">
-                <div class="spinner-border spinner-border-sm texto-primario" role="status">
-                    <span class="sr-only">Cargando ...</span>
-                </div>
+            <ul class="no-list-style">
+                @{
+                    if (Model.Roles != null)
+                    {
+                        @foreach (string rol in Model.Roles.Take(3))
+                        {
+                            <li>@rol</li>
+                        }
+                        @if (Model.Roles.Count > 3)
+                        {
+                            <li>
+                                <button class="btn" data-toggle="collapse" data-target="#collapse-roles" aria-expanded="false" aria-controls="collapse-roles">
+                                    <span></span>
+                                </button>
+                                <div id="collapse-roles" class="collapse">
+                                    <ul class="no-list-style">
+                                        @foreach (string rol in Model.Roles.Skip(3))
+                                        {
+                                            <li>@rol</li>
+                                        }
+                                    </ul>
+                                </div>
+                            </li>
+                        }
+                    }
+                }
+            </ul>
             </td>
 	        @* ¿Recibe boletín? (Sí/No) *@
 	        <td id="boletin_@Model.Key" class="td-boletin">
@@ -163,7 +186,7 @@ bool containsUrlFoto = true;
             @* Acciones a realizar sobre el usuario*@
             <td class="td-acciones">
                 @* Acciones solo permitidas para el Admin del proyecto *@
-                @if (IdentidadActual.IsProyectAdmin == true)
+                @if (IdentidadActual.IsProyectAdmin == true || IdentidadActual.CanManageUsers)
                 {
                     //Html.PartialView("_partial-views/_list-actions-admin-profile", Model)
                     @* Select que será el contendor de las acciones permitidas *@

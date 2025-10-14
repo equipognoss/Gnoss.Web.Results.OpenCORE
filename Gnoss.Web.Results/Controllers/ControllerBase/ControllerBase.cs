@@ -18,6 +18,7 @@ using Es.Riam.Web.Util;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -38,8 +39,9 @@ namespace ServicioCargaResultados
         protected IServicesUtilVirtuosoAndReplication mServicesUtilVirtuosoAndReplication;
         private static object BLOQUEO_COMPROBACION_TRAZA = new object();
         private static DateTime HORA_COMPROBACION_TRAZA;
-
-        public ControllerBase(LoggingService loggingService, ConfigService configService, EntityContext entityContext, RedisCacheWrapper redisCacheWrapper, GnossCache gnossCache, VirtuosoAD virtuosoAD, IHttpContextAccessor httpContextAccessor, IServicesUtilVirtuosoAndReplication servicesUtilVirtuosoAndReplication)
+        private ILogger mlogger;
+        private ILoggerFactory mLoggerFactory;
+        public ControllerBase(LoggingService loggingService, ConfigService configService, EntityContext entityContext, RedisCacheWrapper redisCacheWrapper, GnossCache gnossCache, VirtuosoAD virtuosoAD, IHttpContextAccessor httpContextAccessor, IServicesUtilVirtuosoAndReplication servicesUtilVirtuosoAndReplication, ILogger<ControllerBase> logger, ILoggerFactory loggerFactory)
         {
             mLoggingService = loggingService;
             mVirtuosoAD = virtuosoAD;
@@ -49,6 +51,8 @@ namespace ServicioCargaResultados
             mGnossCache = gnossCache;
             mHttpContextAccessor = httpContextAccessor;
             mUtilWeb = new UtilWeb(mHttpContextAccessor);
+            mlogger = logger;
+            mLoggerFactory = loggerFactory;
             mServicesUtilVirtuosoAndReplication = servicesUtilVirtuosoAndReplication;
         }
 
@@ -139,30 +143,25 @@ namespace ServicioCargaResultados
         {
             if (DateTime.Now > HORA_COMPROBACION_TRAZA)
             {
-                lock (BLOQUEO_COMPROBACION_TRAZA)
-                { 
-                    if (DateTime.Now > HORA_COMPROBACION_TRAZA)
-                    {
-                        HORA_COMPROBACION_TRAZA = DateTime.Now.AddSeconds(15);
-                        TrazasCL trazasCL = new TrazasCL(mEntityContext, mLoggingService, mRedisCacheWrapper, mConfigService, mServicesUtilVirtuosoAndReplication);
-                        string tiempoTrazaResultados = trazasCL.ObtenerTrazaEnCache("results");
+                HORA_COMPROBACION_TRAZA = DateTime.Now.AddSeconds(15);
+                TrazasCL trazasCL = new TrazasCL(mEntityContext, mLoggingService, mRedisCacheWrapper, mConfigService, mServicesUtilVirtuosoAndReplication, mLoggerFactory.CreateLogger<TrazasCL>(), mLoggerFactory);
+                string tiempoTrazaResultados = trazasCL.ObtenerTrazaEnCache("results");
 
-                        if (!string.IsNullOrEmpty(tiempoTrazaResultados))
-                        {
-                            int valor = 0;
-                            int.TryParse(tiempoTrazaResultados, out valor);
-                            LoggingService.TrazaHabilitada = true;
-                            LoggingService.TiempoMinPeticion = valor; //Para sacar los segundos
-                        }
-                        else
-                        {
-                            LoggingService.TrazaHabilitada = false;
-                            LoggingService.TiempoMinPeticion = 0;
-                        }
-                    }
+                if (!string.IsNullOrEmpty(tiempoTrazaResultados))
+                {
+                    int valor = 0;
+                    int.TryParse(tiempoTrazaResultados, out valor);
+                    LoggingService.TrazaHabilitada = true;
+                    LoggingService.TiempoMinPeticion = valor; //Para sacar los segundos
+                }
+                else
+                {
+                    LoggingService.TrazaHabilitada = false;
+                    LoggingService.TiempoMinPeticion = 0;
                 }
             }
         }
+
         #endregion
 
         public override void OnActionExecuting(ActionExecutingContext filterContext)
@@ -194,7 +193,7 @@ namespace ServicioCargaResultados
                         {
 
                             Guid usuarioID = new Guid(cookie["usuarioID"]);
-                            IdentidadCN identidadCN = new IdentidadCN(mEntityContext, mLoggingService, mConfigService, mServicesUtilVirtuosoAndReplication);
+                            IdentidadCN identidadCN = new IdentidadCN(mEntityContext, mLoggingService, mConfigService, mServicesUtilVirtuosoAndReplication, mLoggerFactory.CreateLogger<IdentidadCN>(), mLoggerFactory);
                             Guid usuarioIDDeBD = identidadCN.ObtenerUsuarioIDConIdentidadID(identidadID);
                             if (!usuarioIDDeBD.Equals(usuarioID))
                             {

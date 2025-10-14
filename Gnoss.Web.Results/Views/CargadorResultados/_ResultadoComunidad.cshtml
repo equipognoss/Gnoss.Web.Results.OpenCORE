@@ -1,72 +1,114 @@
 ﻿@model CommunityModel
 @if (Model != null)
-{   
-    <div class="resource ">
-        <div class="box description">
-            <!-- Titulo del proyecto y tipo de proyecto (publico, privado... etc) -->
-            <div class="group title">
-                <h3>
-                    <a href="@Model.Url">@Model.Name</a>
-                </h3>
-                <div class="logoComunidad">
+{
+    string communityType = Html.GetText("COMUNIDADES", "COMUNIDADPUBLICA");
+    @switch ((CommunityModel.TypeAccessProject)Model.AccessType)
+    {
+        case CommunityModel.TypeAccessProject.Private:
+            communityType = Html.GetText("COMUNIDADES", "COMUNIDADPRIVADA");
+            break;
+        case CommunityModel.TypeAccessProject.Public:
+            communityType = Html.GetText("COMUNIDADES", "COMUNIDADPUBLICA");
+            break;
+        case CommunityModel.TypeAccessProject.Reserved:
+            communityType = Html.GetText("COMUNIDADES", "COMUNIDADRESERVADA");
+            break;
+        case CommunityModel.TypeAccessProject.Restricted:
+            communityType = Html.GetText("COMUNIDADES", "COMUNIDADRESTRINGIDA");
+            break;
+    }
+
+    <div id="card-community-@Model.Key" class="resource card-community">
+        <div class="card">
+            <div class="down-wrap">
+                <div class="card-community-img">
                     <a href="@Model.Url">
-                    <img alt="@Model.Name" src="@Model.Logo" />
+                        <img src="@Model.Logo"></img>
                     </a>
                 </div>
             </div>
-            <!-- Contenido de la descripción del proyecto -->
-            <div class="group content">
-                <span class="descripcionResumida">
-                    @Html.Raw(Model.Description)
-                </span>
-            </div>
-            <!-- Etiquetas y categorías del proyecto -->
+            <div class="card-wrapper">
+                <div class="card-body">
+                    @* Nombre de la comunidad *@
+                    <a href="@Model.Url">
+                        <p class="card-title text-dark font-weight-bold name" data-name="@Model.Name">@Model.Name</p>
+                    </a>
+                    @* Privacidad de la Comunidad *@
+                    <span class="text-muted">@Html.Raw(communityType)</span>
 
-            <div class="group utils-2">
-                <p>
-                    @switch ((CommunityModel.TypeAccessProject)Model.AccessType)
-                    {
-                        case CommunityModel.TypeAccessProject.Private:
-                        @Html.Raw(Html.GetText("COMUNIDADES", "COMUNIDADPRIVADA"))
-                            break;
-                        case CommunityModel.TypeAccessProject.Public:
-                        @Html.Raw(Html.GetText("COMUNIDADES", "COMUNIDADPUBLICA"))
-                            break;
-                        case CommunityModel.TypeAccessProject.Reserved:
-                        @Html.Raw(Html.GetText("COMUNIDADES", "COMUNIDADRESERVADA"))
-                            break;
-                        case CommunityModel.TypeAccessProject.Restricted:
-                        @Html.Raw(Html.GetText("COMUNIDADES", "COMUNIDADRESTRINGIDA"))
-                            break;
-                    }. 
-                    <a href="@Model.Url/@Html.GetText("URLSEM", "PERSONASYORGANIZACIONES")/@Html.GetText("URLSEM", "PERSONAS")">@Model.NumberOfPerson @Html.GetText("COMMON", "PERSONAS")</a><span>, </span><a href="@Model.Url/@Html.GetText("URLSEM", "PERSONASYORGANIZACIONES")/@Html.GetText("URLSEM", "ORGANIZACIONES")">@Model.NumberOfOrganizations @Html.GetText("COMMON", "ORGANIZACIONES")</a><span> y </span><a href="@Model.Url/@Html.GetText("URLSEM", "RECURSOS")">@Model.NumberOfResources @Html.GetText("COMMON", "RECURSOS")</a>
-                </p>
-            </div>
-
-            @if( Model.Categories != null &&  Model.Categories.Count > 0)
-            {
-                <div class="group categorias">
-                    <p class="literal">@Html.GetText("LISTARECURSOS", "CATEGORIAS") </p>
-                    <ul id="listCat">
-                        @foreach(CategoryModel categoria in Model.Categories)
+                    @*Seccion solo visible en la vista mosiaco y listado*@
+                    @* Descripcion de la comunidad*@
+                    <div class="down-wrap mb-3">
+                        <div class="community-card-description">
+                            @Html.Raw(Model.Description)
+                        </div>
+                    </div>
+                    @* Estadisticas de la comunidad*@
+                    <div class="social">
+                        <div class="personas">
+                            <span class="material-icons pr-2">person</span>
+                            <a class="text-reset" href="@Model.Url/@Html.GetText("URLSEM", "PERSONASYORGANIZACIONES")/@Html.GetText("URLSEM", "PERSONAS")">
+                                <span class="number persons"
+                                      data-persons="@Model.NumberOfPerson">@Model.NumberOfPerson</span>
+                            </a>
+                        </div>
+                        <div class="organizaciones">
+                            <span class="material-icons pr-2">domain</span>
+                            <a class="text-reset"  href="@Model.Url/@Html.GetText("URLSEM", "PERSONASYORGANIZACIONES")/@Html.GetText("URLSEM", "ORGANIZACIONES")">
+                                <span class="number organizations"
+                                      data-organizations="@Model.NumberOfOrganizations">@Model.NumberOfOrganizations</span>
+                            </a>
+                        </div>
+                        <div class="recursos">
+                            <span class="material-icons pr-2">description</span>
+                            <a class="text-reset" href="@Model.Url/@Html.GetText("URLSEM", "RECURSOS")">
+                                <span class="number resources"
+                                      data-resources="@Model.NumberOfResources">@Model.NumberOfResources</span>
+                            </a>
+                        </div>
+                    </div>
+                    @*Seccion solo visible en la vista mosiaco y listado*@
+                    <div class="down-wrap mt-3">
+                        @*Etiquetas y categorías del proyecto*@
+                        @if (Model.Categories != null && Model.Categories.Count > 0)
                         {
-                        <li><a href="@Model.UrlSearch/@Html.GetText("URLSEM", "CATEGORIA")/@categoria.Name/@categoria.Key">@categoria.Name</a>@(categoria!=Model.Categories.Last()?",":"")</li>
+                            <div class="categorias">
+                                <p>@Html.GetText("LISTARECURSOS", "CATEGORIAS")</p>
+                                <ul class="no-list-style d-flex align-items-center">
+                                    @foreach (CategoryModel categoria in Model.Categories)
+                                    {
+                                        <li class="tag" title="@categoria.Name">
+                                            <a href="@Model.UrlSearch@Html.GetText("COMMONS","COMUNIDADES").ToLower()?skos:ConceptID=gnoss:@categoria.Key.ToString().ToUpper()">
+                                                @categoria.Name
+                                            </a>
+                                        </li>
+                                    }
+                                </ul>
+                            </div>
                         }
-                    </ul>
+                        @if (Model.Tags != null && Model.Tags.Count > 0)
+                        {
+                            <div class="etiquetas">
+                                <p>@Html.GetText("LISTARECURSOS", "ETIQUETAS")</p>
+                                <ul class="no-list-style d-flex align-items-center">
+                                    @foreach (string tag in Model.Tags)
+                                    {
+                                        <li class="tag" title="@tag">
+                                            <a href="@Model.UrlSearch@Html.GetText("COMMON","COMUNIDADES").ToLower()?sioc_t:Tag=@tag">@tag</a>
+                                        </li>
+                                    }
+                                </ul>
+                            </div>
+                        }
+                    </div>
                 </div>
-            }
-            @if( Model.Tags != null &&  Model.Tags.Count > 0)
-            {
-            <div class="group etiquetas">
-                <p class="literal">@Html.GetText("LISTARECURSOS", "ETIQUETAS") </p>
-                <ul class="listTags">
-                    @foreach(string tag in Model.Tags)
-                    {
-                    <li><a href="@Model.UrlSearch/@Html.GetText("URLSEM", "TAG")/@tag">@tag</a>@(tag!=Model.Tags.Last()?",":"")</li>
-                    }
-                </ul>
+                <div class="card-footer">
+                    @* Fecha de creacion de la Comunidad*@
+                    <small class="text-body-secondary creationdate" data-creationdate="@Model.OpenDate.ToShortDateString()">
+                        @Model.OpenDate.ToShortDateString()
+                    </small>
+                </div>
             </div>
-            }
         </div>
     </div>
 }

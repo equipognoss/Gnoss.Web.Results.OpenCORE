@@ -251,7 +251,6 @@ namespace Gnoss.Web.Results
             app.UseRouting();
             app.UseCors();
             app.UseAuthorization();
-			app.UseSession();
 			app.UseGnossMiddleware();
 
             app.UseEndpoints(endpoints =>

@@ -101,14 +101,14 @@ Variables
         //funcion_seguir = "AccionPerfil_NoSeguir(this, '" + publicador.ListActions.UrlUnfollow + "')";
         funcion_seguir = "AccionPerfil_Seguir_Listado(this, '" + publicador.ListActions.UrlUnfollow + "','" + publisherNameActionFollowUnFollow + "')";
         icono_seguir = "person_remove_alt_1";
-        titulo_seguir = "Dejar de seguir";
+            titulo_seguir = @Html.GetText("COMMON", "NOSEGUIR");
         dataAttributeFollowing = "data-follow";
     }
     else {
         //funcion_seguir = "AccionPerfil_Seguir(this, '" + publicador.ListActions.UrlFollow + "')";            
         funcion_seguir = "AccionPerfil_Seguir_Listado(this, '" + publicador.ListActions.UrlFollow + "','" + publisherNameActionFollowUnFollow + "')";
         icono_seguir = "person_add_alt_1";
-        titulo_seguir = "Seguir";
+            titulo_seguir = @Html.GetText("COMMON", "SEGUIR");
     }
 }else {
     permitirFollow = false;

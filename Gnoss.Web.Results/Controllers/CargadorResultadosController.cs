@@ -2102,14 +2102,15 @@ namespace ServicioCargaResultados
                 identidad.KeyPerson = mCargadorResultadosModel.IdentidadActual.PersonaID.Value;
             }
 
+            UtilPermisos utilPermisos = new UtilPermisos(mEntityContext, mLoggingService, mConfigService, mLoggerFactory.CreateLogger<UtilPermisos>(), mLoggerFactory);
+
             if (mCargadorResultadosModel.IdentidadActual.Persona != null)
             {
                 identidad.KeyUser = mCargadorResultadosModel.IdentidadActual.Persona.UsuarioID;
-                identidad.IsProyectAdmin = mCargadorResultadosModel.Proyecto.EsAdministradorUsuario(mCargadorResultadosModel.IdentidadActual.Persona.UsuarioID);
-				UtilPermisos utilPermisos = new UtilPermisos(mEntityContext, mLoggingService, mConfigService, mLoggerFactory.CreateLogger<UtilPermisos>(), mLoggerFactory);
+                identidad.IsProyectAdmin = mCargadorResultadosModel.Proyecto.EsAdministradorUsuario(mCargadorResultadosModel.IdentidadActual.Persona.UsuarioID);				
 				if (pProyectoID != ProyectoAD.MetaProyecto)
                 {
-                    identidad.CanManageUsers = identidad.CanManageUsers = utilPermisos.IdentidadTienePermiso((ulong)PermisoComunidad.GestionarMiembros, identidad.KeyIdentity, identidad.KeyIdentity, TipoDePermiso.Comunidad);
+                    identidad.CanManageUsers = utilPermisos.IdentidadTienePermiso((ulong)PermisoComunidad.GestionarMiembros, identidad.KeyIdentity, identidad.KeyIdentity, TipoDePermiso.Comunidad);
 				}
                 else
                 {
@@ -2122,9 +2123,8 @@ namespace ServicioCargaResultados
 
             ViewBag.IdentidadActual = identidad;
 
-            ProyectoCN proyCN = new ProyectoCN(mEntityContext, mLoggingService, mConfigService, mServicesUtilVirtuosoAndReplication, mLoggerFactory.CreateLogger<ProyectoCN>(), mLoggerFactory);
             // las personalizaciones no se cargan en la página de administración de miembros
-            if (!mCargadorResultadosModel.AdministradorQuiereVerTodasLasPersonas || !mCargadorResultadosModel.TipoBusqueda.Equals(TipoBusqueda.PersonasYOrganizaciones) || !proyCN.EsIdentidadAdministradorProyecto(mCargadorResultadosModel.IdentidadID, pProyectoID, TipoRolUsuario.Administrador))
+            if (!mCargadorResultadosModel.AdministradorQuiereVerTodasLasPersonas || !mCargadorResultadosModel.TipoBusqueda.Equals(TipoBusqueda.PersonasYOrganizaciones) || !identidad.CanManageUsers)
             {
                 VistaVirtualCL vistaVirtualCL = new VistaVirtualCL(mEntityContext, mLoggingService, mGnossCache, mRedisCacheWrapper, mConfigService, mServicesUtilVirtuosoAndReplication, mLoggerFactory.CreateLogger<VistaVirtualCL>(), mLoggerFactory);
                 DataWrapperVistaVirtual vistaVirtualDW = vistaVirtualCL.ObtenerVistasVirtualPorProyectoID(pProyectoID, PersonalizacionEcosistemaID, ComunidadExcluidaPersonalizacionEcosistema);

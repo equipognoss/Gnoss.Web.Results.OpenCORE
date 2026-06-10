@@ -1634,6 +1634,7 @@ namespace ServicioCargaResultados
                 #endregion
 
                 #region Num resultados
+
                 string sparqlNumero = pSPARQL;
                 int indexOrderBy = sparqlNumero.ToLower().IndexOf("order by ");
                 int indexSelect = sparqlNumero.ToLower().IndexOf("select ");
@@ -1653,6 +1654,7 @@ namespace ServicioCargaResultados
                 }
 
                 mCargadorResultadosModel.FacetadoCL.FacetadoCN.LeerDeVirtuoso($"SPARQL {sparqlNumero}", "NResultadosBusqueda", mCargadorResultadosModel.FacetadoDS, mCargadorResultadosModel.ProyectoSeleccionado.ToString().ToLower());
+
                 #endregion
 
                 if (mCargadorResultadosModel.FacetadoDS.Tables.Contains("NResultadosBusqueda"))
@@ -1683,6 +1685,7 @@ namespace ServicioCargaResultados
                 #endregion
 
                 #region Cargamos los resultados
+
                 List<Guid> listaRecursosID = new List<Guid>();
                 foreach (string idResultado in mCargadorResultadosModel.ListaIdsResultado.Keys)
                 {
@@ -1691,7 +1694,7 @@ namespace ServicioCargaResultados
 
                 ControladorProyectoMVC controladorMVC = new ControladorProyectoMVC(UtilIdiomas, BaseURL, BaseURLsContent, BaseURLStatic, mCargadorResultadosModel.Proyecto, mCargadorResultadosModel.ProyectoOrigenID, mCargadorResultadosModel.FilaParametroGeneral, mCargadorResultadosModel.IdentidadActual, mCargadorResultadosModel.EsBot, mLoggingService, mEntityContext, mConfigService, mHttpContextAccessor, mRedisCacheWrapper, mVirtuosoAD, mGnossCache, mEntityContextBASE, mServicesUtilVirtuosoAndReplication, mLoggerFactory.CreateLogger<ControladorProyectoMVC>(), mLoggerFactory);
 
-                Dictionary<Guid, ResourceModel> listaRecursosModel = controladorMVC.ObtenerRecursosPorID(listaRecursosID, "", null, true, pObtenerIdentidades, pObtenerDatosExtraIdentidades);
+                Dictionary<Guid, ResourceModel> listaRecursosModel = controladorMVC.ObtenerRecursosPorID(listaRecursosID, "", null, true, pObtenerIdentidades, pObtenerDatosExtraIdentidades, true);
                 UtilServicioResultados.ProcesarFichasRecursoParaPresentacion(listaRecursosModel);
 
                 #endregion

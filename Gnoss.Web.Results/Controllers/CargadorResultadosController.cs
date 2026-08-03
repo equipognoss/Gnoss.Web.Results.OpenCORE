@@ -331,7 +331,7 @@ namespace ServicioCargaResultados
         public IActionResult ObtenerConsulta([FromForm] string pProyectoID, [FromForm] string pIdentidadID, [FromForm] bool pEsUsuarioInvitado, [FromForm] string pUrlPaginaBusqueda, [FromForm] bool pUsarMasterParaLectura, [FromForm] bool pAdministradorVeTodasPersonas, [FromForm] short pTipoBusqueda, [FromForm] string pGrafo, [FromForm] string pParametros_adiccionales, [FromForm] string pParametros, [FromForm] bool pPrimeraCarga, [FromForm] string pLanguageCode, [FromForm] int pNumeroParteResultados, [FromForm] string pFiltroContexto, [FromForm] bool? pJson, [FromForm] string tokenAfinidad, [FromForm] string pListaRecursosExcluidos)
         {
 			ProyectoAD proyAD = new ProyectoAD(mLoggingService, mEntityContext, mConfigService, mServicesUtilVirtuosoAndReplication, mLoggerFactory.CreateLogger<ProyectoAD>(), mLoggerFactory);
-			if (!proyAD.EsIdentidadAdministradorProyecto(new Guid(pIdentidadID), new Guid(pProyectoID), TipoRolUsuario.Administrador)) // Check de seguridad
+			if (!proyAD.EsIdentidadAdministradorProyecto(new Guid(pIdentidadID), new Guid(pProyectoID))) // Check de seguridad
 			{
 				return new EmptyResult();
 			}
@@ -372,7 +372,7 @@ namespace ServicioCargaResultados
                 {
                     pParametros = "";
                 }
-                if (pParametros.StartsWith("\"") && pParametros.EndsWith("\""))
+                if (pParametros.StartsWith('\"') && pParametros.EndsWith('\"'))
                 {
                     pParametros = pParametros.Substring(1, pParametros.Length - 2);
                 }

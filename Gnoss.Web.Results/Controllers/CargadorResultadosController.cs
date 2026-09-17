@@ -144,7 +144,7 @@ namespace ServicioCargaResultados
         private UtilServicioResultados mUtilServicioResultados;
         private UtilServiciosFacetas mUtilServiciosFacetas;
         private ControladorBase mControladorBase;
-        private IHostingEnvironment mEnv;
+        private IWebHostEnvironment mEnv;
         private IServicesUtilVirtuosoAndReplication mServicesUtilVirtuosoAndReplication;
 
         #endregion
@@ -153,7 +153,7 @@ namespace ServicioCargaResultados
 
         #region Constructor
 
-        public CargadorResultadosController(EntityContext entityContext, LoggingService loggingService, RedisCacheWrapper redisCacheWrapper, ConfigService configService, VirtuosoAD virtuosoAD, GnossCache gnossCache, UtilServicios utilServicios, IHttpContextAccessor httpContextAccessor, EntityContextBASE entityContextBASE, ICompositeViewEngine viewEngine, UtilServicioResultados utilServicioResultados, UtilServiciosFacetas utilServiciosFacetas, IHostingEnvironment env, IServicesUtilVirtuosoAndReplication servicesUtilVirtuosoAndReplication, ILogger<CargadorResultadosController> logger, ILoggerFactory loggerFactory)
+        public CargadorResultadosController(EntityContext entityContext, LoggingService loggingService, RedisCacheWrapper redisCacheWrapper, ConfigService configService, VirtuosoAD virtuosoAD, GnossCache gnossCache, UtilServicios utilServicios, IHttpContextAccessor httpContextAccessor, EntityContextBASE entityContextBASE, ICompositeViewEngine viewEngine, UtilServicioResultados utilServicioResultados, UtilServiciosFacetas utilServiciosFacetas, IWebHostEnvironment env, IServicesUtilVirtuosoAndReplication servicesUtilVirtuosoAndReplication, ILogger<CargadorResultadosController> logger, ILoggerFactory loggerFactory)
             : base(loggingService, configService, entityContext, redisCacheWrapper, gnossCache, virtuosoAD, httpContextAccessor, servicesUtilVirtuosoAndReplication,logger,loggerFactory)
         {
             mEntityContext = entityContext;
@@ -1167,7 +1167,7 @@ namespace ServicioCargaResultados
             JsonSerializerSettings jsonSerializerSettingsVB = new JsonSerializerSettings
             {
                 TypeNameHandling = TypeNameHandling.All,
-                TypeNameAssemblyFormat = System.Runtime.Serialization.Formatters.FormatterAssemblyStyle.Full
+                TypeNameAssemblyFormatHandling = TypeNameAssemblyFormatHandling.Full
             };
             Dictionary<string, object> dic = ViewData.Where(k => !k.Key.Equals("LoggingService")).ToDictionary(k => k.Key, v => v.Value);
             string jsonViewData = JsonConvert.SerializeObject(dic, jsonSerializerSettingsVB);

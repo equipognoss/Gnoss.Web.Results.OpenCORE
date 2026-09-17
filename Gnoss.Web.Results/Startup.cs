@@ -7,6 +7,7 @@ using Es.Riam.Gnoss.AD.Virtuoso;
 using Es.Riam.Gnoss.CL;
 using Es.Riam.Gnoss.CL.RelatedVirtuoso;
 using Es.Riam.Gnoss.Elementos.ParametroAplicacion;
+using Es.Riam.Gnoss.HealthChecks;
 using Es.Riam.Gnoss.Recursos;
 using Es.Riam.Gnoss.Util.Configuracion;
 using Es.Riam.Gnoss.Util.General;
@@ -20,15 +21,13 @@ using Es.Riam.Util;
 using Gnoss.Web.Services.VirtualPathProvider;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc.Razor.RuntimeCompilation;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using Microsoft.OpenApi.Models;
-using Npgsql.EntityFrameworkCore.PostgreSQL.Infrastructure;
+using Microsoft.OpenApi;
 using ServicioCargaResultadosMVC.Middlewares;
 using System;
 using System.Collections;
@@ -57,7 +56,6 @@ namespace Gnoss.Web.Results
             using var tempProvider = services.BuildServiceProvider();
             var loggerFactory = tempProvider.GetRequiredService<ILoggerFactory>();
 
-            bool cargado = false;
             services.AddCors(options =>
             {
                 options.AddPolicy(name: "_myAllowSpecificOrigins",
@@ -71,13 +69,12 @@ namespace Gnoss.Web.Results
             });
             services.AddControllers();
             services.AddHttpContextAccessor();
-            services.AddScoped(typeof(UtilTelemetry));
             services.AddScoped(typeof(Usuario));
             services.AddScoped(typeof(UtilPeticion));
             services.AddScoped(typeof(Conexion));
             services.AddScoped(typeof(UtilGeneral));
             services.AddScoped(typeof(LoggingService));
-            services.AddScoped(typeof(RedisCacheWrapper));
+            services.AddSingleton(typeof(RedisCacheWrapper));
             services.AddScoped(typeof(Configuracion));
             services.AddScoped(typeof(GnossCache));
             services.AddScoped(typeof(UtilServicioResultados));
@@ -126,25 +123,10 @@ namespace Gnoss.Web.Results
             var loggingService = sp.GetService<LoggingService>();
             var virtualProvider = sp.GetService<BDVirtualPath>();
             var redisCacheWrapper = sp.GetService<RedisCacheWrapper>();
-            while (!cargado)
-            {
-                try
-                {
-                    services.AddRazorPages().AddRazorRuntimeCompilation();
-                    services.AddControllersWithViews().AddRazorRuntimeCompilation();
-                    services.Configure<MvcRazorRuntimeCompilationOptions>(opts =>
-                    {
+            services.AddRazorPages().AddRazorRuntimeCompilation();
+            services.AddControllersWithViews().AddRazorRuntimeCompilation();
 
-                        opts.FileProviders.Add(
-                            new BDFileProvider(loggingService, virtualProvider));
-                    });
-                    cargado = true;
-                }
-                catch (Exception)
-                {
-                    cargado = false;
-                }
-            }
+            services.AddSingleton<BDRequestScopedFileProvider>();
             // Resolve the services from the service provider
             var configService = sp.GetService<ConfigService>();
 			var servicesUtilVirtuosoAndReplication = sp.GetService<IServicesUtilVirtuosoAndReplication>();
@@ -167,9 +149,12 @@ namespace Gnoss.Web.Results
 
             CargarConfiguracionFacetado(loggingService, entity, configService);
 
-            ConfigurarApplicationInsights(configService);
-
             UtilServicios.CargarDominiosPermitidosCORS(entity);
+            services.AddHealthChecks()
+                .AddGnossDatabaseHealthCheck<EntityContext>(bdType, configService.ObtenerSqlConnectionString())
+                .AddGnossRedisHealthCheck(configService.ObtenerConexionRedisIPMaster("redis"))
+                .AddGnossVirtuosoHealthCheck(configService.ObtenerVirtuosoConnectionString().ConnectionString);
+
             services.AddSwaggerGen(c =>
             {
                 c.SwaggerDoc("v1", new OpenApiInfo { Title = "Gnoss.Web.Results", Version = "v1" });
@@ -179,6 +164,10 @@ namespace Gnoss.Web.Results
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
+            var bdProvider = app.ApplicationServices.GetRequiredService<BDRequestScopedFileProvider>();
+            env.ContentRootFileProvider = new Microsoft.Extensions.FileProviders.CompositeFileProvider(
+                env.ContentRootFileProvider, bdProvider);
+
             if (env.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();      
@@ -195,12 +184,14 @@ namespace Gnoss.Web.Results
             app.UseHttpsRedirection();
 
             app.UseRouting();
-            app.UseCors();
+            app.UseCors("_myAllowSpecificOrigins");
             app.UseAuthorization();
 			app.UseGnossMiddleware();
 
+            var managementPort = Configuration.GetValue("ManagementPort", 8081);
             app.UseEndpoints(endpoints =>
             {
+                endpoints.MapGnossHealthEndpoints(managementPort);
                 endpoints.MapControllers();
             });
         }
@@ -251,31 +242,6 @@ namespace Gnoss.Web.Results
                 else
                 {
                     FacetadoAD.EscaparComillasDoblesEstatica = false;
-                }
-            }
-        }
-
-        private void ConfigurarApplicationInsights(ConfigService configService)
-        {
-            string valor = configService.ObtenerImplementationKeyResultados();
-
-            if (!string.IsNullOrEmpty(valor))
-            {
-                Microsoft.ApplicationInsights.Extensibility.TelemetryConfiguration.Active.InstrumentationKey = valor.ToLower();
-            }
-
-            if (UtilTelemetry.EstaConfiguradaTelemetria)
-            {
-                //Configuración de las trazas
-                string ubicacionTrazas = configService.ObtenerUbicacionTrazasResultados();
-
-                int valorInt2 = 0;
-                if (int.TryParse(ubicacionTrazas, out valorInt2))
-                {
-                    if (Enum.IsDefined(typeof(UtilTelemetry.UbicacionLogsYTrazas), valorInt2))
-                    {
-                        LoggingService.UBICACIONTRAZA = (UtilTelemetry.UbicacionLogsYTrazas)valorInt2;
-                    }
                 }
             }
         }
